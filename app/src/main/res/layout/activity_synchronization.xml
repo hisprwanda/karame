@@ -24,7 +24,7 @@
         <ImageView
             android:id="@+id/dhisLogo"
             android:layout_width="0dp"
-            android:layout_height="80dp"
+            android:layout_height="100dp"
             android:layout_centerInParent="true"
             android:layout_marginTop="20dp"
             android:layout_marginEnd="20dp"
@@ -32,17 +32,16 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/emis_logo_white"
-            app:tint="@color/white" />
+            app:srcCompat="@drawable/mineduc_logo" />
 
         <ImageView
             android:id="@+id/logo_flag"
             android:layout_width="wrap_content"
             android:layout_height="80dp"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/dhisLogo"
             tools:src="@drawable/sierra_leone" />
 
         <com.airbnb.lottie.LottieAnimationView

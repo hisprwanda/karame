@@ -12,3 +12,4 @@
 /*.secrets.yml
 /gradle.deps
 .kotlin/
+*[Dd]raft*

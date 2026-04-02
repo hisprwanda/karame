@@ -28,7 +28,7 @@ class VersionRepository(val d2: D2) {
 
     suspend fun checkVersionUpdates() {
         val versionNameOrNull = d2.settingModule().latestAppVersion().blockingGet()?.version()
-            .takeIf { it?.newVersion(BuildConfig.VERSION_NAME) ?: false }
+            .takeIf { it?.newVersion(BuildConfig.SEMIS_VERSION) ?: false }
         _newAppVersion.emit(versionNameOrNull)
     }
 

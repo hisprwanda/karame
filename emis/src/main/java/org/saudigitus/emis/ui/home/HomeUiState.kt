@@ -22,7 +22,7 @@ data class HomeUiState(
     val trackedEntityType: String = "",
     val academicYearState: DropdownState? = null,
     val dataElementFilters: List<DropdownState> = emptyList(),
-    val toolbarHeaders: ToolbarHeaders = ToolbarHeaders(""),
+    val toolbarHeaders: ToolbarHeaders = ToolbarHeaders("", subtitle = "Ministry of Education"),
     val programSettings: Bundle? = null,
     val infoCard: InfoCard = InfoCard(),
     val modules: List<Module> = emptyList(),

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -72,13 +73,25 @@ fun LoginTopBar(
                 modifier = Modifier
                     .size(48.dp),
             )
-            Image(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp),
-                painter = painterResource(id = R.drawable.emis_logo_white),
-                contentDescription = "SEMIS logo",
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Image(
+                    modifier = Modifier.height(48.dp),
+                    painter = painterResource(id = R.drawable.emis_logo_white),
+                    contentDescription = "Karame logo",
+                )
+                Text(
+                    text = "Ministry of Education",
+                    style = TextStyle(
+                        fontSize = 11.sp,
+                        fontFamily = provideFontResource("rubik_regular"),
+                        fontWeight = FontWeight.Normal,
+                        color = Color.White,
+                    ),
+                )
+            }
 
             if (displayMoreActions) {
                 Box {
