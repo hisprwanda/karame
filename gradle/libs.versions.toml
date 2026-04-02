@@ -1,7 +1,7 @@
 [versions]
-sdk = "34"
+sdk = "35"
 minSdk = "21"
-vCode = "138"
+vCode = "145"
 vName = "3.1.0.1"
 gradle = "8.6.1"
 kotlin = '2.0.20'

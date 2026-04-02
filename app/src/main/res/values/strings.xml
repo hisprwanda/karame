@@ -1,6 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!--GENERAL-->
-    <string name="app_name" translatable="false">SEMIS</string>
+    <string name="app_name" translatable="false">Karame</string>
+    <string name="ministry_of_education" translatable="false">Ministry of Education</string>
     <string name="logo_text">dhis</string>
     <string name="logo_number">2</string>
     <string name="tab" translatable="false">\u0009</string>
@@ -355,7 +356,7 @@
     <!--ABOUT-->
     <string name="about_app">App Version: %s</string>
     <string name="about_sdk">SDK Version: %s</string>
-    <string name="about_semis">SEMIS Version: %s</string>
+    <string name="about_semis">Karame Version: %s</string>
     <string name="about_connected">Connected to: %s</string>
     <string name="about_user">Current user: %s</string>
     <string name="about_more">More about this app: read <a href="https://drive.google.com/open?id=1YHRBk6LSp6uROfs19-wCfQGc-rgl2f5iDrhCDasTR8M">here</a> what\'s supported and what\'s not supported</string>

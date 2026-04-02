@@ -17,7 +17,7 @@ repositories {
 }
 
 base {
-    archivesName.set("psm-v" + libs.versions.vName.get())
+    archivesName.set("karame-v" + libs.versions.vName.get())
 }
 
 
