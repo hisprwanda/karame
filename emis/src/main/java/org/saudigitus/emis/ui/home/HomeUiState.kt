@@ -13,6 +13,7 @@ import org.saudigitus.emis.utils.Constants
 @Stable
 data class HomeUiState(
     val isLoading: Boolean = true,
+    val isFetchingTei: Boolean = false,
     val displayFilters: Boolean = true,
     val academicYear: DropdownItem? = null,
     val school: OU? = null,

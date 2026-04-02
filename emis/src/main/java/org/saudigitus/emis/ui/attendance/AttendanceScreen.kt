@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -69,7 +68,7 @@ fun AttendanceScreen(
     teiCardMapper: TEICardMapper,
     infoCard: InfoCard,
     onBack: () -> Unit,
-    sync: () -> Unit,
+    sync: (refresh: (() -> Unit)?) -> Unit,
 ) {
     val students by viewModel.teis.collectAsStateWithLifecycle()
     val attendanceOptions by viewModel.attendanceOptions.collectAsStateWithLifecycle()
@@ -118,10 +117,14 @@ fun AttendanceScreen(
                 viewModel.bulkSave {
                     isAttendanceCompleted = false
                     isBulk = false
+                    sync.invoke {
+                        viewModel.refreshOnSave()
+                    }
                 }
             } else {
-                viewModel.clearCache()
-                viewModel.refreshOnSave()
+                sync.invoke {
+                    viewModel.refreshOnSave()
+                }
             }
         }
     }
@@ -142,13 +145,15 @@ fun AttendanceScreen(
             onAttendanceStatus = { status ->
                 isBulk = true
                 viewModel.bulkAttendance(
-                    index = status.first,
+                    //index = status.first,
                     value = status.second,
-                    color = status.third,
+                    //color = status.third,
                 )
                 launchBulkAssign = false
             },
-            onClear = viewModel::clearCache,
+            onClear = {
+                viewModel.clearCache()
+            },
             onCancel = { launchBulkAssign = false },
         )
     }
@@ -189,7 +194,12 @@ fun AttendanceScreen(
                         currentSchoolCalendar
                     )
                 },
-                syncAction = sync,
+                syncAction = {
+                    sync.invoke {
+                        viewModel.clearCache()
+                        viewModel.refreshOnSave()
+                    }
+                },
             )
         },
         floatingActionButton = {
@@ -199,7 +209,7 @@ fun AttendanceScreen(
                         text = if (attendanceStep == ButtonStep.EDITING) {
                             stringResource(R.string.update)
                         } else {
-                            stringResource(R.string.save)
+                            stringResource(R.string.submit)
                         },
                         color = colorPrimary,
                         style = LocalTextStyle.current.copy(
@@ -295,68 +305,66 @@ fun AttendanceScreen(
 
                     if (!canTakeAttendance) {
                         Info(
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(16.dp),
                         )
                     }
                 }
 
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = colorPrimary,
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 108.dp),
-                    ) {
-                        itemsIndexed(students) { _, student ->
-                            val card = student.map(teiCardMapper = teiCardMapper, showSync = false)
-                            val isInactive = student.enrollments.getOrNull(0)
-                                ?.status() == EnrollmentStatus.CANCELLED
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 108.dp),
+                ) {
+                    itemsIndexed(
+                        students,
+                        key = { _, student -> student.tei.uid().orEmpty() },
+                    ) { _, student ->
+                        val card = student.map(teiCardMapper = teiCardMapper, showSync = false)
+                        val isInactive = student.enrollments.getOrNull(0)
+                            ?.status() == EnrollmentStatus.CANCELLED
 
-                            AttendanceOptionContainer(
-                                attendanceStatus = attendanceStatus,
-                                attendanceBtnState = attendanceBtnState,
-                                attendanceOptions = attendanceOptions,
-                                formFields = formFields,
-                                fieldsState = fieldState,
-                                formData = formData,
-                                attendanceStep = attendanceStep,
-                                isEnabled = !isInactive,
-                                student = student,
-                                card = card,
-                                setAttendance = { index, ou, tei, value, reasonOfAbsence, color, hasPersisted ->
-                                    viewModel.setAttendance(
-                                        index,
-                                        ou,
-                                        tei,
-                                        student.selectedEnrollment.uid().orEmpty(),
-                                        value,
-                                        reasonOfAbsence,
-                                        color,
-                                        hasPersisted,
-                                    )
-                                },
-                                setTEIAbsence = { index, tei, value, color ->
-                                    viewModel.setAbsence(
-                                        index,
-                                        student.tei.organisationUnit().orEmpty(),
-                                        tei,
-                                        student.selectedEnrollment.uid().orEmpty(),
-                                        value,
-                                        color,
-                                        null,
-                                    )
-                                },
-                                setAbsenceState = viewModel::fieldState,
-                                onNext = { tei, ou, fieldData ->
-                                    viewModel.setAbsence(reasonOfAbsence = fieldData.second)
-                                    viewModel.save()
-                                },
-                            )
-                        }
+                        AttendanceOptionContainer(
+                            isLoading = isLoading,
+                            attendanceStatus = attendanceStatus,
+                            attendanceBtnState = attendanceBtnState,
+                            attendanceOptions = attendanceOptions,
+                            formFields = formFields,
+                            fieldsState = fieldState,
+                            formData = formData,
+                            attendanceStep = attendanceStep,
+                            isEnabled = !isInactive,
+                            student = student,
+                            card = card,
+                            setAttendance = { index, ou, tei, value, reasonOfAbsence, color, hasPersisted ->
+                                viewModel.setAttendance(
+                                    index,
+                                    ou,
+                                    tei,
+                                    student.selectedEnrollment.uid().orEmpty(),
+                                    value,
+                                    reasonOfAbsence,
+                                    color,
+                                    hasPersisted,
+                                )
+                            },
+                            setTEIAbsence = { index, tei, value, color ->
+                                viewModel.setAbsence(
+                                    index,
+                                    student.tei.organisationUnit().orEmpty(),
+                                    tei,
+                                    student.selectedEnrollment.uid().orEmpty(),
+                                    value,
+                                    color,
+                                    null,
+                                )
+                            },
+                            setAbsenceState = viewModel::fieldState,
+                            onNext = { tei, ou, fieldData ->
+                                viewModel.setAbsence(reasonOfAbsence = fieldData.second)
+                                viewModel.save()
+                            },
+                        )
                     }
                 }
             }
@@ -384,7 +392,7 @@ private fun validateCalendar(
             .atStartOfDay(ZoneId.systemDefault())
             ?.toInstant()?.toEpochMilli()!!
 
-      val isValid = (
+        val isValid = (
             !DateHelper.isWeekend(date) && currentSchoolCalendar.weekDays?.saturday == false &&
                 currentSchoolCalendar.weekDays.sunday == false
             ) &&

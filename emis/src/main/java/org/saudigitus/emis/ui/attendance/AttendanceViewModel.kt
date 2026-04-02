@@ -5,17 +5,16 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.dhis2.commons.date.DateUtils
 import org.hisp.dhis.android.core.common.ValueType
 import org.saudigitus.emis.data.local.DataManager
 import org.saudigitus.emis.data.local.FormRepository
-import org.saudigitus.emis.data.model.app_config.Attendance
 import org.saudigitus.emis.data.model.Summary
+import org.saudigitus.emis.data.model.app_config.Attendance
 import org.saudigitus.emis.data.model.dto.Absence
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
 import org.saudigitus.emis.ui.base.BaseViewModel
@@ -53,7 +52,7 @@ class AttendanceViewModel
     val attendanceBtnState: StateFlow<List<AttendanceActionButtonState>> = _attendanceBtnState
 
     private val attendanceCache = mutableSetOf<AttendanceEntity>()
-    private var attendanceBtnStateCache = mutableListOf(AttendanceActionButtonState())
+    private var attendanceBtnStateCache = mutableListOf<AttendanceActionButtonState>()
 
     private val _absenceState = MutableStateFlow(Absence())
     private val absenceState: StateFlow<Absence> = _absenceState
@@ -74,17 +73,14 @@ class AttendanceViewModel
     val isLoading: StateFlow<Boolean> = _isLoading
 
     private val _isOnlyAbsence = MutableStateFlow(false)
-    private val isOnlyAbsence: StateFlow<Boolean> = _isOnlyAbsence
-
     private val _options = MutableStateFlow<List<String>>(emptyList())
-    private val options: StateFlow<List<String>> = _options
+
+    // -------------------------------
+    // CONFIG
+    // -------------------------------
 
     fun setDefaults(title: String, onlyAbsence: Boolean = false) {
-        _toolbarHeaders.update {
-            it.copy(
-                title = title,
-            )
-        }
+        _toolbarHeaders.update { it.copy(title = title) }
         _isOnlyAbsence.value = onlyAbsence
     }
 
@@ -96,14 +92,11 @@ class AttendanceViewModel
         viewModelScope.launch {
             val config = repository.getConfig(KEY)?.find { it.program == program }
 
-            if (config != null) {
-                _datastoreAttendance.value = config.attendance
+            config?.let {
+                _datastoreAttendance.value = it.attendance
             }
-            getAttendanceOptions(program)
-            getFields(
-                datastoreAttendance.value?.programStage.orEmpty(),
-                datastoreAttendance.value?.absenceReason.orEmpty(),
-            )
+
+            loadStaticDependencies(program)
         }
     }
 
@@ -112,114 +105,79 @@ class AttendanceViewModel
 
         setConfig(program)
 
-        if (isOnlyAbsence.value) {
-            geTeiByAttendanceStatus()
-        } else {
-            attendanceEvents()
+        val date = eventDate.value.ifEmpty {
+            DateHelper.formatDate(System.currentTimeMillis()).orEmpty()
         }
-    }
 
-    fun setAttendanceStep(attendanceStep: ButtonStep) {
-        _attendanceStep.value = attendanceStep
+        attendanceEvents(date)
     }
 
     override fun setDate(date: String) {
         _eventDate.value = date
-        if (isOnlyAbsence.value) {
-            geTeiByAttendanceStatus(date)
-        } else {
-            attendanceEvents(date)
-        }
+
+        attendanceEvents(date)
+
         _toolbarHeaders.update {
-            it.copy(
-                subtitle = DateHelper.formatDateWithWeekDay(date),
-            )
+            it.copy(subtitle = DateHelper.formatDateWithWeekDay(date))
         }
     }
 
-    private suspend fun getAttendanceOptions(
-        program: String,
-    ) {
+    // -------------------------------
+    // CORE LOADING
+    // -------------------------------
+
+    private suspend fun loadStaticDependencies(program: String) {
         _attendanceOptions.value = repository.getAttendanceOptions(program)
+
+        _formFields.value = formRepository.keyboardInputTypeByStage(
+            program,
+            datastoreAttendance.value?.programStage.orEmpty(),
+            datastoreAttendance.value?.absenceReason.orEmpty()
+        )
     }
 
-    private fun getFields(stage: String, dl: String) {
-        viewModelScope.launch {
-            _formFields.value = formRepository.keyboardInputTypeByStage(program.value,stage, dl)
-        }
-    }
-
-    private fun attendanceEvents(
-        date: String? = DateHelper.formatDate(DateUtils.getInstance().today.time),
-    ) {
+    private fun attendanceEvents(date: String?) {
         viewModelScope.launch {
             try {
-                _attendanceStatus.value = async {
-                    repository.getAttendanceEvent(
-                        program = program.value,
-                        programStage = datastoreAttendance.value?.programStage.orEmpty(),
-                        dataElement = datastoreAttendance.value?.status.orEmpty(),
-                        reasonDataElement = datastoreAttendance.value?.absenceReason.orEmpty(),
-                        teis = teiUIds.value.map { it.first },
-                        date = date.toString(),
-                    )
-                }.await()
+                _isLoading.value = true
 
                 clearCache()
-                attendanceCache.addAll(attendanceStatus.value)
+
+                loadStaticDependencies(program.value)
+
+                val result = repository.getAttendanceEvent(
+                    program = program.value,
+                    programStage = datastoreAttendance.value?.programStage.orEmpty(),
+                    dataElement = datastoreAttendance.value?.status.orEmpty(),
+                    reasonDataElement = datastoreAttendance.value?.absenceReason.orEmpty(),
+                    teis = teiUIds.value.map { it.first },
+                    date = date.toString(),
+                )
+
+                _attendanceStatus.value = result
+
+                attendanceCache.clear()
+                attendanceCache.addAll(result)
 
                 setInitialAttendanceStatus()
+
             } catch (e: Exception) {
-                if (e is CancellationException) {
-                    Timber.tag("ATTENDANCE_DATA").d("Coroutine cancelled: ${e.message}")
-                    throw e
-                }
+                if (e is CancellationException) throw e
                 Timber.tag("ATTENDANCE_DATA").e(e)
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
-    private fun geTeiByAttendanceStatus(
-        date: String? = DateHelper.formatDate(DateUtils.getInstance().today.time),
-    ) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            val config = repository.getConfig(KEY)?.find { it.program == program.value }
-            val registration = config?.registration
-
-            val response = async {
-                repository.geTeiByAttendanceStatus(
-                    ou = ou.value,
-                    program = program.value,
-                    stage = registration?.programStage.orEmpty(),
-                    attendanceStage = datastoreAttendance.value?.programStage.orEmpty(),
-                    attendanceDataElement = datastoreAttendance.value?.status.orEmpty(),
-                    reasonDataElement = datastoreAttendance.value?.absenceReason.orEmpty(),
-                    date = date,
-                    dataElementIds = listOf(
-                        "${schoolCalendar.value?.academicYear}",
-                        "${registration?.grade}",
-                        "${registration?.section}",
-                    ),
-                    options = options.value,
-                )
-            }
-            val data = response.await()
-
-            setTeis(data.keys.toList())
-            _attendanceStatus.value = data.values.toList()
-
-            clearCache()
-            attendanceCache.addAll(attendanceStatus.value)
-
-            setInitialAttendanceStatus()
-
-            _isLoading.value = false
-        }
-    }
+    // -------------------------------
+    // UI MAPPING
+    // -------------------------------
 
     private fun setInitialAttendanceStatus() {
-        attendanceBtnStateCache = attendanceStatus.value.map { attendance ->
+        attendanceBtnStateCache.clear()
+
+        val mapped = attendanceStatus.value.map { attendance ->
             attendanceActionButtonMapper(
                 index = attendanceOptions.value.indexOfFirst { it.code == attendance.value },
                 tei = attendance.tei,
@@ -228,19 +186,21 @@ class AttendanceViewModel
                     it.code == attendance.value
                 }?.color ?: Color.Black,
             )
-        }.toMutableList()
+        }
 
-        _attendanceBtnState.value = attendanceBtnStateCache
+        attendanceBtnStateCache = mapped.toMutableList()
+        _attendanceBtnState.value = mapped
+
         translateAttendanceStatus2FormData()
     }
 
     private fun translateAttendanceStatus2FormData() {
         _formData.value = attendanceStatus.value
             .filter { it.reasonOfAbsence != null }
-            .map { status ->
-                val formField = formFields.value.first()
-                val option = formField
-                    .getOption(status.reasonOfAbsence.orEmpty())
+            .mapNotNull { status ->
+                val formField = formFields.value.firstOrNull() ?: return@mapNotNull null
+
+                val option = formField.getOption(status.reasonOfAbsence.orEmpty())
 
                 FormData(
                     tei = status.tei,
@@ -277,46 +237,29 @@ class AttendanceViewModel
         value: String,
         color: Color?,
     ): MutableList<AttendanceActionButtonState> {
-        val uiCache = attendanceBtnStateCache.find { it.btnId == tei }
 
-        val uiCacheItem = attendanceActionButtonMapper(
+        val existing = attendanceBtnStateCache.find { it.btnId == tei }
+
+        val newItem = attendanceActionButtonMapper(
             index = index,
             tei = tei,
             attendanceValue = value,
             containerColor = color ?: Color.LightGray,
         )
 
-        if (uiCache == null) {
-            attendanceBtnStateCache.add(uiCacheItem)
+        if (existing == null) {
+            attendanceBtnStateCache.add(newItem)
         } else {
-            attendanceBtnStateCache.remove(uiCache)
-            attendanceBtnStateCache.add(uiCacheItem)
+            attendanceBtnStateCache.remove(existing)
+            attendanceBtnStateCache.add(newItem)
         }
 
         return attendanceBtnStateCache
     }
 
-    fun bulkAttendance(
-        index: Int,
-        value: String,
-        reasonOfAbsence: String? = null,
-        color: Color? = null,
-    ) {
-        viewModelScope.launch(Dispatchers.Default) {
-            teiUIds.value.forEach {
-                setAttendance(
-                    index = index,
-                    ou = ou.value,
-                    tei = it.first,
-                    enrollment = it.second,
-                    value = value,
-                    reasonOfAbsence = reasonOfAbsence,
-                    color = color,
-                    hasPersisted = false,
-                )
-            }
-        }
-    }
+    // -------------------------------
+    // USER ACTIONS
+    // -------------------------------
 
     fun setAttendance(
         index: Int,
@@ -329,47 +272,16 @@ class AttendanceViewModel
         hasPersisted: Boolean = true,
     ) {
         viewModelScope.launch {
-            val data = formData.value.toMutableList()
-
-            val formDataItem = data.find { it.tei == tei }
-            if (formDataItem != null) {
-                data.remove(formDataItem)
-                _formData.value = data
-
-                repository.deleteEvent(tei, enrollment, eventDate.value)
-            }
-
-            _attendanceBtnState.value = getAttendanceUiState(index, tei, value, color)
-
-            val attendance = AttendanceEntity(
-                tei = tei,
-                enrollment = enrollment,
-                dataElement = datastoreAttendance.value?.status.orEmpty(),
-                value = value,
-                reasonDataElement = datastoreAttendance.value?.absenceReason,
-                reasonOfAbsence = reasonOfAbsence,
-                date = eventDate.value,
+            setAttendanceInternal(
+                index,
+                ou,
+                tei,
+                enrollment,
+                value,
+                reasonOfAbsence,
+                color,
+                hasPersisted
             )
-
-            val cacheItem = attendanceCache.find { it.tei == attendance.tei }
-
-            if (cacheItem == null) {
-                attendanceCache.add(attendance)
-            } else {
-                attendanceCache.remove(cacheItem)
-                attendanceCache.add(attendance)
-            }
-
-            if (hasPersisted) {
-                viewModelScope.launch {
-                    repository.save(
-                        ou = ou,
-                        program = program.value,
-                        programStage = datastoreAttendance.value?.programStage.orEmpty(),
-                        attendance = attendance,
-                    )
-                }
-            }
         }
     }
 
@@ -382,40 +294,16 @@ class AttendanceViewModel
         color: Color? = null,
         reasonOfAbsence: String? = null,
     ) {
-        if (index != null) {
-            _absenceState.update {
-                it.copy(index = index)
-            }
-        }
-        if (ou != null) {
-            _absenceState.update {
-                it.copy(ou = ou)
-            }
-        }
-        if (tei != null) {
-            _absenceState.update {
-                it.copy(tei = tei)
-            }
-        }
-        if (enrollment != null) {
-            _absenceState.update {
-                it.copy(enrollment = enrollment)
-            }
-        }
-        if (value != null) {
-            _absenceState.update {
-                it.copy(value = value)
-            }
-        }
-        if (color != null) {
-            _absenceState.update {
-                it.copy(color = color)
-            }
-        }
-        if (reasonOfAbsence != null) {
-            _absenceState.update {
-                it.copy(reasonOfAbsence = reasonOfAbsence)
-            }
+        _absenceState.update {
+            it.copy(
+                index = index ?: it.index,
+                ou = ou ?: it.ou,
+                tei = tei ?: it.tei,
+                enrollment = enrollment ?: it.enrollment,
+                value = value ?: it.value,
+                color = color ?: it.color,
+                reasonOfAbsence = reasonOfAbsence ?: it.reasonOfAbsence,
+            )
         }
     }
 
@@ -426,26 +314,19 @@ class AttendanceViewModel
         value: String,
         valueType: ValueType?,
     ) {
-        val currentFields = fieldState.value.toMutableList()
-        val index = currentFields.indexOfFirst { it.key == key && it.dataElement == dataElement }
+        val current = fieldState.value.toMutableList()
 
-        val field = Field(
-            key = key,
-            event = event,
-            dataElement = dataElement,
-            value = value,
-            valueType = valueType,
-            hasError = false,
-            errorMessage = null,
-        )
-
-        if (index >= 0) {
-            currentFields[index] = field
-        } else {
-            currentFields.add(field)
+        val index = current.indexOfFirst {
+            it.key == key && it.dataElement == dataElement
         }
 
-        _fieldState.value = currentFields
+        val field = Field(
+            key, event, dataElement, value, valueType, false, null
+        )
+
+        if (index >= 0) current[index] = field else current.add(field)
+
+        _fieldState.value = current
     }
 
     override fun save() {
@@ -459,69 +340,185 @@ class AttendanceViewModel
             reasonOfAbsence = absenceState.value.reasonOfAbsence,
         )
 
-        val cache = mutableListOf<Absence>()
-
-        cache.addAll(absenceStateCache.value)
-        cache.add(absenceState.value)
-
-        _absenceStateCache.value = cache
+        _absenceStateCache.value =
+            absenceStateCache.value + absenceState.value
     }
 
-    fun bulkSave(
-        onSuccess: () -> Unit = {},
-    ) {
-        viewModelScope.launch {
-            async {
-                attendanceCache.forEach { attendance ->
-                    repository.save(
-                        ou = ou.value,
-                        program = program.value,
-                        programStage = datastoreAttendance.value?.programStage.orEmpty(),
-                        attendance = attendance,
-                    )
-                }
-            }.await()
 
-            clearCache()
-            setAttendanceStep(ButtonStep.EDITING)
-            if (isOnlyAbsence.value) {
-                geTeiByAttendanceStatus(eventDate.value)
-            } else {
-                attendanceEvents(eventDate.value)
+    private suspend fun setAttendanceInternal(
+        index: Int,
+        ou: String,
+        tei: String,
+        enrollment: String,
+        value: String,
+        reasonOfAbsence: String? = null,
+        color: Color? = null,
+        hasPersisted: Boolean = true,
+    ) {
+        val data = formData.value.toMutableList()
+
+        data.find { it.tei == tei }?.let {
+            data.remove(it)
+            _formData.value = data
+            repository.deleteEvent(tei, enrollment, eventDate.value)
+        }
+
+        val updatedStatus = attendanceStatus.value.toMutableList()
+
+        val indexStatus = updatedStatus.indexOfFirst { it.tei == tei }
+
+        val updatedEntity = AttendanceEntity(
+            tei = tei,
+            enrollment = enrollment,
+            dataElement = datastoreAttendance.value?.status.orEmpty(),
+            value = value,
+            reasonDataElement = datastoreAttendance.value?.absenceReason,
+            reasonOfAbsence = reasonOfAbsence,
+            date = eventDate.value,
+        )
+
+        if (indexStatus >= 0) {
+            updatedStatus[indexStatus] = updatedEntity
+        } else {
+            updatedStatus.add(updatedEntity)
+        }
+
+        _attendanceStatus.value = updatedStatus
+
+       /* _attendanceBtnState.value =
+            getAttendanceUiState(index, tei, value, color)
+
+        val attendance = AttendanceEntity(
+            tei = tei,
+            enrollment = enrollment,
+            dataElement = datastoreAttendance.value?.status.orEmpty(),
+            value = value,
+            reasonDataElement = datastoreAttendance.value?.absenceReason,
+            reasonOfAbsence = reasonOfAbsence,
+            date = eventDate.value,
+        )*/
+
+        attendanceCache.removeIf { it.tei == tei }
+        attendanceCache.add(updatedEntity)
+
+        if (hasPersisted) {
+            repository.save(
+                ou = ou,
+                program = program.value,
+                programStage = datastoreAttendance.value?.programStage.orEmpty(),
+                attendance = updatedEntity,
+            )
+        }
+    }
+
+    private var bulkJob: Job? = null
+
+    fun bulkAttendance(
+        value: String,
+        reasonOfAbsence: String? = null,
+    ) {
+        bulkJob?.cancel()
+
+        bulkJob = viewModelScope.launch {
+
+            val updatedList = attendanceStatus.value.toMutableList()
+
+            teiUIds.value.forEach { teiPair ->
+
+                val updatedEntity = AttendanceEntity(
+                    tei = teiPair.first,
+                    enrollment = teiPair.second,
+                    dataElement = datastoreAttendance.value?.status.orEmpty(),
+                    value = value,
+                    reasonDataElement = datastoreAttendance.value?.absenceReason,
+                    reasonOfAbsence = reasonOfAbsence,
+                    date = eventDate.value,
+                )
+
+                val indexStatus = updatedList.indexOfFirst {
+                    it.tei == teiPair.first
+                }
+
+                if (indexStatus >= 0) {
+                    updatedList[indexStatus] = updatedEntity
+                } else {
+                    updatedList.add(updatedEntity)
+                }
+
+                attendanceCache.removeIf { it.tei == teiPair.first }
+                attendanceCache.add(updatedEntity)
+            }
+
+            _attendanceStatus.value = updatedList
+
+            // 🔥 rebuild UI ONCE from source of truth
+            setInitialAttendanceStatus()
+        }
+    }
+
+    fun bulkSave(onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            attendanceCache.forEach { attendance ->
+                repository.save(
+                    ou = ou.value,
+                    program = program.value,
+                    programStage = datastoreAttendance.value?.programStage.orEmpty(),
+                    attendance = attendance,
+                )
             }
             onSuccess()
         }
     }
 
+    fun setAttendanceStep(attendanceStep: ButtonStep) {
+        _attendanceStep.value = attendanceStep
+    }
+
     fun getSummary(): List<Summary> {
-        val summaries = attendanceOptions.value.map { Pair(it.code, Triple(it.iconName, it.icon, it.color)) }
-            .map { status ->
+        val summaries =
+            attendanceOptions.value.map { Pair(it.code, Triple(it.iconName, it.icon, it.color)) }
+                .map { status ->
 
-                val count = attendanceCache.count { it.value.equals(status.first, true) }
+                    val count = attendanceCache.count { it.value.equals(status.first, true) }
 
-                Summary(
-                    count,
-                    status.second.first,
-                    status.second.second,
-                    status.second.third,
-                )
-            }
+                    Summary(
+                        count,
+                        status.second.first,
+                        status.second.second,
+                        status.second.third,
+                    )
+                }
 
         return summaries
     }
 
+    // -------------------------------
+    // HELPERS
+    // -------------------------------
+
     fun clearCache() {
         attendanceCache.clear()
         attendanceBtnStateCache.clear()
+        _attendanceBtnState.value = emptyList()
         _absenceStateCache.value = emptyList()
+        _formData.value = emptyList()
+    }
+
+    fun reset() {
+        clearCache()
+        _isOnlyAbsence.value = false
+        _absenceState.value = Absence()
+        _attendanceStep.value = ButtonStep.EDITING
+        _datastoreAttendance.value = null
+        _attendanceOptions.value = emptyList()
+        _formFields.value = emptyList()
+        _fieldState.value = emptyList()
+        _attendanceStatus.value = emptyList()
+        _isLoading.value = false
     }
 
     fun refreshOnSave() {
-        setAttendanceStep(ButtonStep.EDITING)
-        if (isOnlyAbsence.value) {
-            geTeiByAttendanceStatus(eventDate.value)
-        } else {
-            attendanceEvents(eventDate.value)
-        }
+        reset()
+        setProgram(program.value)
     }
 }

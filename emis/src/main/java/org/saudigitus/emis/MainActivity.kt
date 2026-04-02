@@ -16,6 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,6 +26,8 @@ import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import org.dhis2.commons.Constants
 import org.dhis2.commons.navigator.AppNavigator
+import org.dhis2.commons.network.NetworkUtils
+import org.dhis2.commons.sync.OnDismissListener
 import org.dhis2.commons.sync.SyncContext
 import org.dhis2.commons.sync.SyncDialog
 import org.saudigitus.emis.ui.attendance.AttendanceScreen
@@ -47,6 +50,9 @@ class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var teiCardMapper: TEICardMapper
+
+    @Inject
+    lateinit var networkUtils: NetworkUtils
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -243,19 +249,33 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun syncProgram() {
-        SyncDialog(
-            activity = this@MainActivity,
-            recordUid = viewModel.program.value,
-            syncContext = SyncContext.TrackerProgram(viewModel.program.value),
-            onNoConnectionListener = {
-                Snackbar.make(
-                    this.window.decorView.rootView,
-                    getString(R.string.sync_offline_check_connection),
-                    Snackbar.LENGTH_SHORT,
-                ).show()
-            },
-        ).show()
+    private fun syncProgram(refresh : (() -> Unit)? = null) {
+        if (networkUtils.isOnline()) {
+            SyncDialog(
+                activity = this@MainActivity,
+                recordUid = viewModel.program.value,
+                syncContext = SyncContext.Global(),
+                onNoConnectionListener = {
+                    Snackbar.make(
+                        this.window.decorView.rootView,
+                        getString(R.string.sync_offline_check_connection),
+                        Snackbar.LENGTH_SHORT,
+                    ).show()
+                },
+                dismissListener = object : OnDismissListener {
+                    override fun onDismiss(hasChanged: Boolean) {
+                        viewModel.refreshData()
+                        refresh?.invoke()
+                    }
+                }
+            ).show()
+        } else {
+            Snackbar.make(
+                this.window.decorView.rootView,
+                getString(R.string.sync_offline_check_connection),
+                Snackbar.LENGTH_SHORT,
+            ).show()
+        }
     }
 
     private fun launchTeiDashboard(

@@ -37,6 +37,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import org.saudigitus.emis.data.local.repository.SyncHelperRepository
 
 class SyncPresenterTest {
 
@@ -48,6 +49,7 @@ class SyncPresenterTest {
     private val analyticsHelper: AnalyticsHelper = mock()
     private val syncStatusController: SyncStatusController = mock()
     private val syncRepository: SyncRepository = mock()
+    private val syncHelperRepository: SyncHelperRepository = mock()
 
     @Before
     fun setUp() {
@@ -58,6 +60,7 @@ class SyncPresenterTest {
             analyticsHelper,
             syncStatusController,
             syncRepository,
+            syncHelperRepository,
         )
     }
 

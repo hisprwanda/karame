@@ -113,7 +113,10 @@ dependencies {
     implementation(libs.kotlin.serialization.json)
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.androidx.lifecycle.runtime.compose.android)
-
+    implementation(libs.ktor.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
 
     kapt(libs.dagger.hilt.android.compiler)
 

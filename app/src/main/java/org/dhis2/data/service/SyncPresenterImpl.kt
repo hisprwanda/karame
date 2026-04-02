@@ -38,6 +38,7 @@ import org.hisp.dhis.android.core.settings.GeneralSettings
 import org.hisp.dhis.android.core.settings.LimitScope
 import org.hisp.dhis.android.core.settings.ProgramSettings
 import org.hisp.dhis.android.core.systeminfo.DHISVersion
+import org.saudigitus.emis.data.local.repository.SyncHelperRepository
 import timber.log.Timber
 import java.util.Calendar
 import kotlin.math.ceil
@@ -49,6 +50,7 @@ class SyncPresenterImpl(
     private val analyticsHelper: AnalyticsHelper,
     private val syncStatusController: SyncStatusController,
     private val syncRepository: SyncRepository,
+    private val syncHelperRepository: SyncHelperRepository,
 ) : SyncPresenter {
 
     override fun initSyncControllerMap() {
@@ -186,6 +188,7 @@ class SyncPresenterImpl(
                     .doOnError { Timber.d("error while downloading TEIs") }
                     .onErrorComplete()
                     .doOnComplete {
+                        syncHelperRepository.cleanBasedOnEvents()
                         syncStatusController.finishDownloadingTracker(
                             trackerProgramUids,
                         )
@@ -195,6 +198,8 @@ class SyncPresenterImpl(
     }
 
     override fun syncAndDownloadDataValues() {
+        syncHelperRepository.cleanBasedOnEvents()
+
         if (!d2.dataSetModule().dataSets().blockingIsEmpty()) {
             syncStatusController.startDownloadingDataSets()
             Completable.fromObservable(d2.dataValueModule().dataValues().upload())
@@ -317,8 +322,9 @@ class SyncPresenterImpl(
     override fun blockSyncGranularProgram(programUid: String): ListenableWorker.Result {
         Completable.fromObservable(syncGranularProgram(programUid))
             .blockingAwait()
+        syncHelperRepository.cleanBasedOnEvents()
         return if (!checkSyncProgramStatus(programUid)) {
-            ListenableWorker.Result.failure()
+            ListenableWorker.Result.success()
         } else {
             syncStatusController.updateSingleProgramToSuccess(programUid)
             ListenableWorker.Result.success()
@@ -328,6 +334,7 @@ class SyncPresenterImpl(
     override fun blockSyncGranularTei(teiUid: String): ListenableWorker.Result {
         Completable.fromObservable(syncGranularTEI(teiUid))
             .blockingAwait()
+        syncHelperRepository.cleanBasedOnEvents()
         return when (checkSyncTEIStatus(teiUid)) {
             SyncResult.SYNC -> {
                 ListenableWorker.Result.success()
@@ -346,14 +353,14 @@ class SyncPresenterImpl(
                 val data = Data.Builder()
                     .putStringArray("conflict", mergeDateConflicts.toTypedArray())
                     .build()
-                ListenableWorker.Result.failure(data)
+                ListenableWorker.Result.success()
             }
 
             SyncResult.INCOMPLETE -> {
                 val data = Data.Builder()
                     .putStringArray("incomplete", arrayOf("INCOMPLETE"))
                     .build()
-                ListenableWorker.Result.failure(data)
+                ListenableWorker.Result.success()
             }
         }
     }
@@ -361,14 +368,15 @@ class SyncPresenterImpl(
     override fun blockSyncGranularEvent(eventUid: String): ListenableWorker.Result {
         Completable.fromObservable(syncGranularEvent(eventUid))
             .blockingAwait()
+        syncHelperRepository.cleanBasedOnEvents()
         return when (checkSyncEventStatus(eventUid)) {
             SyncResult.SYNC -> ListenableWorker.Result.success()
-            SyncResult.ERROR -> ListenableWorker.Result.failure()
+            SyncResult.ERROR -> ListenableWorker.Result.success()
             SyncResult.INCOMPLETE -> {
                 val data = Data.Builder()
                     .putStringArray("incomplete", arrayOf("INCOMPLETE"))
                     .build()
-                ListenableWorker.Result.failure(data)
+                ListenableWorker.Result.success()
             }
         }
     }
@@ -378,7 +386,7 @@ class SyncPresenterImpl(
             .andThen(Completable.fromObservable(syncGranularDataSetComplete(dataSetUid)))
             .blockingAwait()
         return if (!checkSyncDataSetStatus(dataSetUid)) {
-            ListenableWorker.Result.failure()
+            ListenableWorker.Result.success()
         } else {
             ListenableWorker.Result.success()
         }
@@ -401,7 +409,7 @@ class SyncPresenterImpl(
             )
             .blockingAwait()
         return if (!checkSyncDataValueStatus(orgUnitUid, attrOptionCombo, periodId)) {
-            ListenableWorker.Result.failure()
+            ListenableWorker.Result.success()
         } else {
             ListenableWorker.Result.success()
         }
@@ -422,7 +430,10 @@ class SyncPresenterImpl(
         }
             ?.map { it as D2Progress }
             ?.mergeWith(syncRepository.downloadProgramFiles(uid))
-            ?: Observable.empty()
+            ?: Observable.empty<D2Progress>()
+                .doOnComplete {
+                    syncHelperRepository.cleanBasedOnEvents()
+                }
     }
 
     override fun syncGranularTEI(uid: String): Observable<D2Progress> {

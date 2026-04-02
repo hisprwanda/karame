@@ -41,7 +41,11 @@ class D2ErrorUtils(
             D2ErrorCode.BAD_CREDENTIALS ->
                 context.getString(R.string.login_error_bad_credentials)
             D2ErrorCode.UNKNOWN_HOST ->
-                context.getString(R.string.login_error_unknown_host)
+                if (networkUtils.isOnline()) {
+                    context.getString(R.string.login_error_unknown_host)
+                } else {
+                    context.getString(R.string.error_no_internet_connection)
+                }
             D2ErrorCode.UNEXPECTED ->
                 context.getString(R.string.error_unexpected)
             D2ErrorCode.TOO_MANY_ORG_UNITS ->
@@ -147,7 +151,7 @@ class D2ErrorUtils(
             D2ErrorCode.PROGRAM_ACCESS_CLOSED -> defaultError()
             D2ErrorCode.SERVER_CONNECTION_ERROR ->
                 if (networkUtils.isOnline()) {
-                    context.getString(R.string.error_server_unavailable)
+                    context.getString(R.string.server_is_unavailable)
                 } else {
                     context.getString(R.string.error_no_internet_connection)
                 }

@@ -8,7 +8,7 @@ kotlin = '2.0.20'
 hilt = '2.47'
 androidxNavigation = "2.6.0"
 androidxHiltNavigation = "1.0.0"
-semis = "1.5.2"
+semis = "1.5.3"
 
 jacoco = '0.8.10'
 designSystem = "0.4.0.1"
@@ -100,6 +100,8 @@ ktxCollectionsImmutable = "0.3.5"
 material3WindowSize = "1.2.0"
 material3AdaptiveAndroid = "1.0.0"
 lifecycleRuntimeComposeAndroid = "2.8.7"
+ktor="2.3.11"
+
 [libraries]
 gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "gradle" }
 kotlinPlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -236,6 +238,12 @@ dispatcher-dispatchCore = { group = "com.rickbusarow.dispatch", name = "dispatch
 dispatcher-dispatchEspresso = { group = "com.rickbusarow.dispatch", name = "dispatch-android-espresso", version = "1.0.0-beta10" }
 deprecated-autoValueParcel = { group = "com.ryanharter.auto.value", name = "auto-value-parcel", version.ref = "autovalueparcel" }
 androidx-lifecycle-runtime-compose-android = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose-android", version.ref = "lifecycleRuntimeComposeAndroid" }
+ktor-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+
+
 [plugins]
 kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 [bundles]

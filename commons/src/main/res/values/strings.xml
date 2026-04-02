@@ -146,13 +146,13 @@
     <string name="login_error_null_username">Username is missing. Please enter username.</string>
     <string name="login_error_dhis_version">This server is running a dhis version different than 2.29. Update your server version or use the testing environment to proceed.</string>
     <string name="login_error_dhis_version_v2">This server is running a DHIS2 version different than %s. Update your server version or contact your admin.</string>
-    <string name="login_error_unsuccessful_response">Something went wrong. Please check that server URL, username and password are correct and try again.</string>
+    <string name="login_error_unsuccessful_response">Something went wrong. Please check that server link, username and password are correct and try again.</string>
     <string name="login_error_error_response">Sorry! Something failed on the server side.</string>
-    <string name="login_error_no_dhis_instance">The URL provided is not a DHIS2 server.</string>
+    <string name="login_error_no_dhis_instance">The link provided is not a DHIS2 server.</string>
     <string name="login_error_bad_credentials">The username or password are incorrect</string>
-    <string name="login_error_unknown_host">Unknown server</string>
+    <string name="login_error_unknown_host">The server couldn’t be recognized. Please check and try again.</string>
     <string name="online_search_parsing_error">Error while parsing results</string>
-    <string name="error_unexpected">Something unexpected went worng.</string>
+    <string name="error_unexpected">Something unexpected went wrong.</string>
     <string name="error_too_manu_org_units">Your user has more than one root organisation units. Review your configuration or contact your admin.</string>
     <string name="error_max_tei_count_reached">Online results exceed the maximum number of tracker instances that can be shown. Please refine your search.</string>
     <string name="error_many_requests">The server is a bit busy at this moment. Please try a bit later.</string>
@@ -185,14 +185,14 @@
     <string name="error_object_update">The object could not be updated.</string>
     <string name="error_object_insert">The object could not be inserted.</string>
     <string name="error_ownership_access">You don\'t have access.</string>
-    <string name="error_null_url">The server URL is missing. Please enter URL.</string>
-    <string name="error_server_malformed">The server URL is not well formed. Please check it.</string>
+    <string name="error_null_url">The server link is missing. Please enter link.</string>
+    <string name="error_server_malformed">Server link is not correct, please check the server link or contact support for assistance</string>
     <string name="error_settings_app_not_supported">This version of the Settings Web App is not supported.</string>
     <string name="error_settings_app_not_intalled">The Settings Web App is not installed in the server.</string>
     <string name="error_socket_timeout">The server took too much time to respond. We canceled the request. </string>
     <string name="error_relationship_updated">The relationship can\'t be updated.</string>
     <string name="error_too_many_periods">There are too many periods.</string>
-    <string name="error_url_not_found">We couldn´t find the URL. Please verify it.</string>
+    <string name="error_url_not_found">We couldn´t find the link. Please verify it.</string>
     <string name="error_account_disabled">Your user account have been disabled. If this is an error, contact your administrator.</string>
     <string name="error_account_locked">Your user account is locked. If this is an error, contact your administrator.</string>
     <string name="error_set_value">The value could not be set.</string>
@@ -308,4 +308,5 @@
     <string name="sync_retry">Retry sync</string>
     <string name="syncing">Synchronizing...</string>
     <string name="remove">Remove</string>
+    <string name="server_is_unavailable">The server is currently unavailable. We’re working on it, please try again soon.</string>
 </resources>

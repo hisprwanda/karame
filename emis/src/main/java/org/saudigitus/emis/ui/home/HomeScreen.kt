@@ -203,40 +203,9 @@ fun HomeUI(
                         )
                     }
                 }
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .align(Alignment.CenterHorizontally)
-                        .height(54.dp)
-                        .shadow(
-                            elevation = 2.dp,
-                            ambientColor = Color.Black.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(30.dp),
-                            clip = false,
-                        ),
-                    onClick = { onEvent.invoke(HomeUiEvent.OnDownloadStudent) },
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(
-                            16.dp,
-                            Alignment.CenterHorizontally
-                        ),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = stringResource(
-                                R.string.dowload_teis,
-                                uiState.trackedEntityType
-                            ),
-                        )
-                        Text(stringResource(R.string.dowload_teis, uiState.trackedEntityType))
-                    }
-                }
             }
         }
-        if (!uiState.infoCard.hasData()) {
+        if (uiState.isFetchingTei) {
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
             )

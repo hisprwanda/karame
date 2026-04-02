@@ -25,10 +25,12 @@ fun D2.eventsWithTrackedDataValues(
     ou: String,
     program: String,
     stage: String,
+    tei: String,
 ): List<Event> = eventModule().events()
     .byOrganisationUnitUid().eq(ou)
     .byProgramUid().eq(program)
     .byProgramStageUid().eq(stage)
+    .byTrackedEntityInstanceUids(listOf(tei))
     .byDeleted().isFalse
     .withTrackedEntityDataValues()
     .blockingGet()

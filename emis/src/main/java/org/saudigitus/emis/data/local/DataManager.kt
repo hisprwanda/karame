@@ -5,6 +5,7 @@ import org.hisp.dhis.android.core.dataelement.DataElement
 import org.saudigitus.emis.data.model.app_config.EMISConfigItem
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.Subject
+import org.saudigitus.emis.data.model.TransferredTei
 import org.saudigitus.emis.data.model.app_config.ProgramStages
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
 import org.saudigitus.emis.data.model.schoolcalendar_config.SchoolCalendarConfig
@@ -45,6 +46,8 @@ interface DataManager {
     ): List<AttendanceOption>
 
     suspend fun getDataElement(uid: String): DataElement?
+
+    suspend fun getTransferredTeis(orgUnit: String): List<TransferredTei>
 
     fun getTeisBy(
         ou: String,

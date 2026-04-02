@@ -29,6 +29,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.dhis2.App
+import org.dhis2.BuildConfig
 import org.dhis2.R
 import org.dhis2.bindings.app
 import org.dhis2.bindings.buildInfo
@@ -204,7 +205,7 @@ class LoginActivity : ActivityGlobalAbstract(), LoginContracts.View {
             val displayMoreActions by presenter.displayMoreActions().observeAsState(true)
             MdcTheme {
                 LoginTopBar(
-                    version = buildInfo(),
+                    version =  "v${BuildConfig.SEMIS_VERSION}",
                     displayMoreActions = displayMoreActions,
                     onImportDatabase = {
                         showLoginProgress(false, getString(R.string.importing_database))

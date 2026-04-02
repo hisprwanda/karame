@@ -152,6 +152,7 @@ class HomeActivity : AppCompatActivity() {
                         syncStatusItem: SyncStatusItem,
                         intent: Intent,
                     ): Intent? {
+                        syncStatusItem.state
                         return null
                     }
                 },

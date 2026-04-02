@@ -64,4 +64,6 @@
     <string name="none">None</string>
     <string name="dowload_teis">Sync %s</string>
     <string name="no_attendance_school_days">Attendance is only available on school days. Please select a valid school day.</string>
+    <string name="submit">Submit</string>
+    <string name="reminder_to_sync">Note: Click sync (🔄️) on top right corner of screen to submit data</string>
 </resources>

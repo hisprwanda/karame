@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -20,13 +21,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dhis2.commons.ui.model.ListCardUiModel
+import org.dhis2.ui.theme.colorPrimary
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicator
+import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicatorType
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
@@ -41,6 +46,7 @@ import org.saudigitus.emis.utils.isVisible
 @Suppress("DEPRECATION")
 @Composable
 fun AttendanceOptionContainer(
+    isLoading: Boolean,
     attendanceStatus: List<AttendanceEntity> = emptyList(),
     attendanceBtnState: List<AttendanceActionButtonState> = emptyList(),
     attendanceOptions: List<AttendanceOption> = emptyList(),
@@ -108,6 +114,11 @@ fun AttendanceOptionContainer(
                 AttendanceItemState(
                     tei = student.tei.uid(),
                     attendanceState = attendanceStatus,
+                )
+            } else if (isLoading) {
+                ProgressIndicator(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    type = ProgressIndicatorType.CIRCULAR_SMALL
                 )
             } else {
                 AttendanceButtons(

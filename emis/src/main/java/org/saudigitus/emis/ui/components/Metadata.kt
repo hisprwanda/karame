@@ -229,8 +229,7 @@ data class InfoCard(
     val isStaff: Boolean = false,
 ) {
     fun hasData(): Boolean {
-        return academicYear.isNotEmpty() &&
-            orgUnitName.isNotEmpty()
+        return teiCount > 0
     }
 }
 
@@ -270,24 +269,37 @@ fun ShowCard(
                         contentDescription = "Icon",
                     )
                     Spacer(modifier = Modifier.size(10.dp))
+
                     Column(
                         modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.Center
                     ) {
+                        val hasGradeOrSection =
+                            infoCard.grade.isNotEmpty() || infoCard.section.isNotEmpty()
+
+                        if (hasGradeOrSection) {
+                            val gradeLabel = listOfNotNull(infoCard.grade, infoCard.section)
+                                .filter { it.isNotEmpty() }
+                                .joinToString(separator = ", ")
+
+                            Text(
+                                text = gradeLabel,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
                         Text(
-                            text = String.format("%s, %s", infoCard.grade, infoCard.section),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                        )
-                        Text(
-                            text = String.format("%s | %s", infoCard.academicYear, infoCard.orgUnitName),
+                            text = "${infoCard.academicYear} | ${infoCard.orgUnitName}",
                             fontSize = 14.sp,
-                            overflow = TextOverflow.Ellipsis,
-                            softWrap = true,
                             maxLines = 1,
-                            modifier = Modifier.fillMaxWidth(),
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
+
                 if (enableTEICount) {
                     TEICountComponent(teiCount = infoCard.teiCount)
                 } else {

@@ -67,4 +67,6 @@
     <string name="error_invalid_attribute">You do not have access to attribute %s</string>
     <string name="error_unsupported_aggregation_type">Unsupported aggregation type %s</string>
     <string name="line_listing_max_results">Table limited to %1$s entries. Filter to refine results.</string>
+    <string name="internet_connection_is_unstable">Your internet connection is unstable. Please try again later to update the students data.</string>
+    <string name="server_is_unavailable">The server is currently unavailable. We’re working on it, please try again soon.</string>
 </resources>

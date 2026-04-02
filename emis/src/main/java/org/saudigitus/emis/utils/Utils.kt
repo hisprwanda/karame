@@ -5,7 +5,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import org.dhis2.commons.resources.ColorUtils
 import org.saudigitus.emis.R
+import org.saudigitus.emis.data.model.TransferredTei
+import org.saudigitus.emis.data.model.TransferredType
 import org.saudigitus.emis.data.model.app_config.EMISConfig
+import org.saudigitus.emis.data.model.app_config.TransferEvent
 import kotlin.random.Random
 
 object Utils {
@@ -61,5 +64,18 @@ object Utils {
         return (1..length)
             .map { chars[Random.nextInt(chars.length)] }
             .joinToString("")
+    }
+
+
+    fun mapToType(
+        dataElement: String,
+        transferred: TransferEvent
+    ): TransferredType? {
+        return when (dataElement) {
+            transferred.trackerId -> TransferredType.TRACKER_ID
+            transferred.academicYear -> TransferredType.ACADEMIC_YEAR
+            transferred.enrollment -> TransferredType.ENROLLMENT
+            else -> null
+        }
     }
 }

@@ -19,11 +19,14 @@ import org.hisp.dhis.android.core.event.EventCreateProjection
 import org.hisp.dhis.android.core.event.EventStatus
 import org.saudigitus.emis.data.local.DataManager
 import org.saudigitus.emis.data.local.util.SqlRaw
-import org.saudigitus.emis.data.model.app_config.EMISConfig
-import org.saudigitus.emis.data.model.app_config.EMISConfigItem
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.Subject
+import org.saudigitus.emis.data.model.TransferredTei
+import org.saudigitus.emis.data.model.app_config.Defaults
+import org.saudigitus.emis.data.model.app_config.EMISConfig
+import org.saudigitus.emis.data.model.app_config.EMISConfigItem
 import org.saudigitus.emis.data.model.app_config.ProgramStages
+import org.saudigitus.emis.data.model.app_config.TransferEvent
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
 import org.saudigitus.emis.data.model.dto.withBtnSettings
 import org.saudigitus.emis.data.model.schoolcalendar_config.SchoolCalendarConfig
@@ -34,6 +37,7 @@ import org.saudigitus.emis.utils.Constants
 import org.saudigitus.emis.utils.Transformations
 import org.saudigitus.emis.utils.Utils
 import org.saudigitus.emis.utils.Utils.getAttendanceStatusColor
+import org.saudigitus.emis.utils.Utils.mapToType
 import org.saudigitus.emis.utils.eventsWithTrackedDataValues
 import org.saudigitus.emis.utils.optionByOptionSet
 import org.saudigitus.emis.utils.optionsByOptionSetAndCode
@@ -42,7 +46,6 @@ import org.saudigitus.emis.utils.optionsNotInOptionsSets
 import timber.log.Timber
 import java.sql.Date
 import javax.inject.Inject
-import kotlin.collections.mapNotNull
 
 class DataManagerImpl
 @Inject constructor(
@@ -225,6 +228,63 @@ class DataManagerImpl
             return@withContext d2.dataElement(uid)
         }
 
+    override suspend fun getTransferredTeis(orgUnit: String) =
+        withContext(Dispatchers.IO) {
+            try {
+                val dataStore = d2.dataStoreModule()
+                    .dataStore()
+                    .byNamespace().eq("semis")
+                    .byKey().eq("transfers")
+                    .one().blockingGet()
+
+                val transferred = EMISConfig.translateFromJson<TransferEvent>(dataStore?.value())
+                    ?: return@withContext emptyList()
+
+                val requiredDataElements = listOfNotNull(
+                    transferred.academicYear,
+                    transferred.enrollment,
+                    transferred.trackerId,
+                )
+
+                d2.eventModule().events()
+                    .byProgramUid().eq(transferred.program)
+                    .byOrganisationUnitUid().eq(orgUnit)
+                    .withTrackedEntityDataValues()
+                    .byDeleted().isFalse
+                    .blockingGet()
+                    .filter { event ->
+                        val values = event.trackedEntityDataValues().orEmpty()
+
+                        val presentElements = values
+                            .filter { !it.value().isNullOrEmpty() }
+                            .map { it.dataElement() }
+
+                        requiredDataElements.all { it in presentElements }
+                    }
+                    .flatMap { event ->
+                        event.trackedEntityDataValues().orEmpty()
+                            .mapNotNull { dataValue ->
+                                val de = dataValue.dataElement()
+                                val value = dataValue.value()
+
+                                if (de in requiredDataElements && !value.isNullOrEmpty()) {
+                                    val type = mapToType(de.orEmpty(), transferred)
+
+                                    type?.let {
+                                        TransferredTei(
+                                            dataElement = de.orEmpty(),
+                                            value = value,
+                                            type = it
+                                        )
+                                    }
+                                } else null
+                            }
+                    }
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
+
     override fun getTeisBy(
         ou: String,
         program: String,
@@ -232,29 +292,47 @@ class DataManagerImpl
         dataElementIds: List<String>,
         dataValues: List<String>,
     ): Flow<List<SearchTeiModel>> = flow {
-        emit(
-            d2.eventsWithTrackedDataValues(
-                ou,
-                program,
-                stage,
-            ).filter {
-                val dataElements =
-                    it.trackedEntityDataValues()?.associate { trackedEntityDataValue ->
-                        Pair(trackedEntityDataValue.dataElement(), trackedEntityDataValue.value())
-                    }
-                dataElements?.keys?.containsAll(dataElementIds) == true &&
-                    dataElements.values.containsAll(dataValues)
-            }.mapNotNull {
-                d2.enrollment("${it.enrollment()}")
-            }.map {
-                val tei = d2.trackedEntityModule()
-                    .trackedEntityInstances()
-                    .byUid().eq(it.trackedEntityInstance())
-                    .withTrackedEntityAttributeValues()
-                    .one().blockingGet()
+        val default = getDefaultFromEmisConfig(program)
+        val defaultOrder = default?.defaultOrder?.split(":")
+        val attrId = defaultOrder?.firstOrNull().orEmpty()
+        val order = if (defaultOrder?.lastOrNull()
+                .orEmpty().lowercase() == "desc"
+        ) RepositoryScope.OrderByDirection.DESC
+        else RepositoryScope.OrderByDirection.ASC
 
-                transformations.transform(tei, program, it)
-            },
+        emit(
+            d2.trackedEntityModule().trackedEntityInstanceQuery()
+                .byOrgUnits().eq(ou)
+                .byProgram().eq(program)
+                .byProgramStage().eq(stage)
+                .orderByAttribute(attrId).eq(order)
+                .blockingGet().flatMap {
+                    d2.eventsWithTrackedDataValues(
+                        ou,
+                        program,
+                        stage,
+                        it.uid()
+                    ).filter { event ->
+                        val dataElements =
+                            event.trackedEntityDataValues()?.associate { trackedEntityDataValue ->
+                                Pair(
+                                    trackedEntityDataValue.dataElement(),
+                                    trackedEntityDataValue.value()
+                                )
+                            }
+                        dataElements?.keys?.containsAll(dataElementIds) == true &&
+                            dataElements.values.containsAll(dataValues)
+                    }.mapNotNull { event ->
+                        d2.enrollment(event.enrollment().orEmpty())
+                    }.mapNotNull { enrollment ->
+                        val transferred = getTransferredTeis(ou)
+                        val dataValues = transferred.map { dataValue -> dataValue.value }
+
+                        if (!dataValues.contains(enrollment.trackedEntityInstance())) {
+                            transformations.transform(it, program, enrollment)
+                        } else null
+                    }
+                }
         )
     }.buffer()
         .conflate()
@@ -272,38 +350,34 @@ class DataManagerImpl
         val config = getConfig(Constants.KEY)?.find { it.program == program }
             ?.attendance ?: return@withContext emptyList()
 
-        val deferredEvents = async {
-            d2.eventModule().events()
-                .byTrackedEntityInstanceUids(teis)
-                .byProgramUid().eq(program)
-                .byProgramStageUid().eq(programStage)
-                .byDeleted().isFalse
-                .byEventDate().eq(
-                    if (date != null) {
-                        Date.valueOf(date)
-                    } else {
-                        DateUtils.getInstance().today
-                    },
+        d2.eventModule().events()
+            .byTrackedEntityInstanceUids(teis)
+            .byProgramUid().eq(program)
+            .byProgramStageUid().eq(programStage)
+            .byDeleted().isFalse
+            .byEventDate().eq(
+                if (date != null) {
+                    Date.valueOf(date)
+                } else {
+                    DateUtils.getInstance().today
+                },
+            )
+            .withTrackedEntityDataValues()
+            .blockingGet()
+            .mapNotNull {
+                transformations.eventTransform(it, dataElement, reasonDataElement)
+            }
+            .map { attendanceEntity ->
+                val status = config.statusOptions?.find { status ->
+                    status.code == attendanceEntity.value
+                }
+
+                attendanceEntity.withBtnSettings(
+                    icon = Utils.dynamicIcons("${status?.icon}"),
+                    iconName = "${status?.icon}",
+                    iconColor = getAttendanceStatusColor("${status?.key}", "${status?.color}"),
                 )
-                .withTrackedEntityDataValues()
-                .blockingGet()
-                .mapNotNull {
-                    transformations.eventTransform(it, dataElement, reasonDataElement)
-                }
-                .map { attendanceEntity ->
-                    val status = config.statusOptions?.find { status ->
-                        status.code == attendanceEntity.value
-                    }
-
-                    attendanceEntity.withBtnSettings(
-                        icon = Utils.dynamicIcons("${status?.icon}"),
-                        iconName = "${status?.icon}",
-                        iconColor = getAttendanceStatusColor("${status?.key}", "${status?.color}"),
-                    )
-                }
-        }
-
-        return@withContext deferredEvents.await()
+            }
     }
 
     override suspend fun deleteEvent(
@@ -340,7 +414,7 @@ class DataManagerImpl
 
         val attendanceStatus = config.statusOptions?.find { status ->
             status.key == Constants.ABSENT
-        }?.code ?: ""
+        }?.code.orEmpty()
 
         val data = mutableMapOf<SearchTeiModel, AttendanceEntity>()
 
@@ -438,5 +512,12 @@ class DataManagerImpl
                     code = it.code(),
                 )
             }
+    }
+
+    private suspend fun getDefaultFromEmisConfig(program: String): Defaults? {
+        val config = getConfig(Constants.KEY)?.find { it.program == program }
+            ?: return null
+
+        return config.defaults
     }
 }

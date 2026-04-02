@@ -145,29 +145,7 @@ class SyncStatusDialog : BottomSheetDialogFragment(), GranularSyncContracts.View
                             icon = {
                                 SyncStateIcon(state = syncUiState.syncState)
                             },
-                            extraContent = if (syncUiState.content.isNotEmpty()) {
-                                {
-                                    LazyColumn(
-                                        verticalArrangement = spacedBy(8.dp),
-                                    ) {
-                                        items(syncUiState.content) { item ->
-                                            SyncStatusItem(
-                                                title = item.displayName,
-                                                subtitle = item.description,
-                                                onClick = {
-                                                    syncStatusDialogNavigator?.navigateTo(item) {
-                                                        dismiss()
-                                                    }
-                                                },
-                                            ) {
-                                                SyncStateIcon(state = item.state)
-                                            }
-                                        }
-                                    }
-                                }
-                            } else {
-                                null
-                            },
+                            extraContent = null,
                         )
                     }
                 }
