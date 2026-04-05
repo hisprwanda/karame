@@ -47,7 +47,7 @@ import org.saudigitus.emis.utils.Utils
 fun BulkAssignComponent(
     onDismissRequest: () -> Unit,
     attendanceOptions: List<AttendanceOption>,
-    onAttendanceStatus: (Triple<Int, String, Color?>) -> Unit,
+    onAttendanceStatus: (Triple<Int, String, Color?>, key: String?) -> Unit,
     onClear: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -95,7 +95,7 @@ fun BulkAssignComponent(
                         colors = CardDefaults.cardColors(
                             containerColor = Color.White,
                         ),
-                        onClick = { onAttendanceStatus.invoke(Triple(index, option.code!!, option.color)) },
+                        onClick = { onAttendanceStatus.invoke(Triple(index, option.code.orEmpty(), option.color), option.key) },
                     ) {
                         Row(
                             modifier = Modifier

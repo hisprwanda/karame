@@ -130,6 +130,22 @@ class DataManagerImpl
             }
         }
 
+    override suspend fun save(
+        ou: String,
+        program: String,
+        programStage: String,
+        attendances: List<AttendanceEntity>
+    ) = withContext(Dispatchers.IO) {
+        attendances.forEach { attendance ->
+            save(
+                ou,
+                program,
+                programStage,
+                attendance
+            )
+        }
+    }
+
     override suspend fun getConfig(id: String): List<EMISConfigItem>? =
         withContext(Dispatchers.IO) {
             val dataStore = d2.dataStoreModule()
@@ -385,17 +401,30 @@ class DataManagerImpl
         enrollment: String,
         eventDate: String
     ) = withContext(Dispatchers.IO) {
-        val events = d2.eventModule().events()
+        val event = d2.eventModule().events()
             .byTrackedEntityInstanceUids(listOf(tei))
             .byEnrollmentUid().eq(enrollment)
             .byEventDate().eq(Date.valueOf(eventDate))
-            .blockingGetUids()
+            .one()
+            .blockingGet()
 
-        events.forEach {
-            d2.eventModule().events()
-                .uid(it)
-                .blockingDeleteIfExist()
-        }
+        d2.eventModule().events()
+            .uid(event?.uid())
+            .blockingDeleteIfExist()
+    }
+
+    override suspend fun deleteAllEvents(
+        teis: List<String>,
+        eventDate: String
+    ) = withContext(Dispatchers.IO) {
+        d2.eventModule().events()
+            .byTrackedEntityInstanceUids(teis)
+            .byEventDate().eq(Date.valueOf(eventDate))
+            .blockingGetUids()
+            .forEach {
+                d2.eventModule().events()
+                    .uid(it).blockingDeleteIfExist()
+            }
     }
 
     override suspend fun geTeiByAttendanceStatus(

@@ -801,9 +801,9 @@
     <string name="break_glass_dialog_title">This program is protected</string>
     <string name="break_glass_hint">Describe the reason here</string>
     <string name="authenticating">Authenticating</string>
-    <string name="login_error_no_dhis_instance">Server link is not correct, please check the server link or contact support for assistance</string>
-    <string name="login_error_bad_credentials">Invalid username or password. Please check your details and try again, or contact your supervisor for help.</string>
-    <string name="login_error_unknown_host">Server not recognized. Please check your connection or contact your supervisor for help.</string>
+    <string name="login_error_no_dhis_instance">Provided server url is not a dhis instance</string>
+    <string name="login_error_bad_credentials">Wrong credentials</string>
+    <string name="login_error_unknown_host">Unknown server</string>
     <string name="invalid_integer">Value must be an integer</string>
     <string name="openid_session_expired">The session has expired</string>
     <string name="openid_session_expired_message">Your current session has expired. For security reasons you will need to provide your credentials again</string>
@@ -954,7 +954,7 @@
     <string name="mark_follow_up">Mark for follow-up</string>
     <string name="coordinates">Coordinates</string>
     <string name="no_data_access">You don’t have access to data.\nContact your administrator.</string>
-    <string name="sync_offline_check_connection">Looks like you\'re offline. Please check you connection</string>
+    <string name="sync_offline_check_connection">Looks like you\'re offline. Please check your connection. Sync once you\'re online</string>
     <string name="delete_tei_dialog_title">Delete this %s?</string>
     <string name="delete_tei_dialog_message">This %s and all its data across all programs will be deleted. This action cannot be undone.</string>
     <string name="remove_enrollment_dialog_title">Remove from %s?</string>

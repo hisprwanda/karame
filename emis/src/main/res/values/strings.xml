@@ -60,10 +60,11 @@
     <string name="sync_dialog_action_not_now">Not now</string>
     <string name="enrolledIn">Enrolled in:</string>
     <string name="programs">Programs:</string>
-    <string name="sync_offline_check_connection">Looks like you\\\'re offline. Please check you connection</string>
+    <string name="sync_offline_check_connection">Looks like you\'re offline. Please check your connection. Sync once you\'re online</string>
     <string name="none">None</string>
     <string name="dowload_teis">Sync %s</string>
     <string name="no_attendance_school_days">Attendance is only available on school days. Please select a valid school day.</string>
     <string name="submit">Submit</string>
     <string name="reminder_to_sync">Note: Click sync (🔄️) on top right corner of screen to submit data</string>
+    <string name="you_must_record_for_all">You must record attendance for all students</string>
 </resources>

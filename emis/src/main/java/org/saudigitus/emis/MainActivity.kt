@@ -119,6 +119,8 @@ class MainActivity : FragmentActivity() {
                             attendanceViewModel.setOU(it.arguments?.getString("ou") ?: "")
 
                             AttendanceScreen(
+                                navController,
+                                this@MainActivity.supportFragmentManager,
                                 attendanceViewModel,
                                 teiCardMapper,
                                 infoCard,
@@ -157,6 +159,8 @@ class MainActivity : FragmentActivity() {
                             attendanceViewModel.setOU(it.arguments?.getString("ou") ?: "")
 
                             AttendanceScreen(
+                                navController,
+                                this@MainActivity.supportFragmentManager,
                                 attendanceViewModel,
                                 teiCardMapper,
                                 infoCard = infoCard,

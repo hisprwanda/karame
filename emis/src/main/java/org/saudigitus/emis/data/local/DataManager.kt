@@ -20,6 +20,14 @@ interface DataManager {
         programStage: String,
         attendance: AttendanceEntity,
     )
+
+    suspend fun save(
+        ou: String,
+        program: String,
+        programStage: String,
+        attendances: List<AttendanceEntity>,
+    )
+
     suspend fun getConfig(id: String): List<EMISConfigItem>?
     suspend fun getTrackedEntityType(program: String): String?
 
@@ -67,6 +75,8 @@ interface DataManager {
     ): List<AttendanceEntity>
 
     suspend fun deleteEvent(tei: String, enrollment: String, eventDate: String)
+
+    suspend fun deleteAllEvents(teis: List<String>, eventDate: String)
 
     suspend fun geTeiByAttendanceStatus(
         ou: String,

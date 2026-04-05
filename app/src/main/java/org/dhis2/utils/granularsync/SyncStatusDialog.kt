@@ -112,7 +112,7 @@ class SyncStatusDialog : BottomSheetDialogFragment(), GranularSyncContracts.View
                     syncState?.let { syncUiState ->
                         when {
                             syncUiState.shouldDismissOnUpdate -> dismiss()
-                            syncing && syncUiState.syncState == State.SYNCED -> {
+                            syncing && (syncUiState.syncState == State.SYNCED || syncUiState.syncState == State.ERROR) -> {
                                 dismiss()
                                 Toast.makeText(
                                     requireContext(),

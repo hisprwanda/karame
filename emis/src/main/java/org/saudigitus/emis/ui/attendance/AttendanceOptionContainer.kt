@@ -54,9 +54,11 @@ fun AttendanceOptionContainer(
     fieldsState: List<Field> = emptyList(),
     formData: List<FormData> = emptyList(),
     attendanceStep: ButtonStep,
+    hasInvalidData: Boolean = false,
     card: ListCardUiModel,
     student: SearchTeiModel,
     isEnabled: Boolean = true,
+    displayReason: Boolean = true,
     setAttendance: (
         index: Int,
         ou: String,
@@ -147,8 +149,8 @@ fun AttendanceOptionContainer(
             }
         }
         AbsenceForm(
-            visibility = isAbsent || formData.isVisible(student.tei.uid()),
-            enabled = attendanceStep == ButtonStep.HOLD_SAVING,
+            visibility = isAbsent || formData.isVisible(student.tei.uid()) || displayReason,
+            enabled = attendanceStep == ButtonStep.HOLD_SAVING && !hasInvalidData,
             student = student,
             formFields = formFields,
             fieldsState = fieldsState,
@@ -209,7 +211,7 @@ private fun AbsenceForm(
                 onNext = {
                     onNext.invoke(
                         student.uid(),
-                        student.tei.organisationUnit() ?: "",
+                        student.tei.organisationUnit().orEmpty(),
                         it,
                     )
                 },

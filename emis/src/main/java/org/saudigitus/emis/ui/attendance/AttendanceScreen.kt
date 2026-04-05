@@ -43,7 +43,9 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilterNotNull
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import org.dhis2.ui.theme.colorPrimary
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
 import org.saudigitus.emis.R
@@ -56,6 +58,7 @@ import org.saudigitus.emis.ui.components.ShowCard
 import org.saudigitus.emis.ui.components.Toolbar
 import org.saudigitus.emis.ui.components.ToolbarActionState
 import org.saudigitus.emis.ui.teis.mapper.TEICardMapper
+import org.saudigitus.emis.ui.theme.light_error
 import org.saudigitus.emis.ui.theme.light_success
 import org.saudigitus.emis.utils.DateHelper
 import org.saudigitus.emis.utils.DateHelper.stringToLocalDate
@@ -64,6 +67,8 @@ import java.time.ZoneId
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AttendanceScreen(
+    navController: NavController,
+    supportFragmentManager: FragmentManager,
     viewModel: AttendanceViewModel,
     teiCardMapper: TEICardMapper,
     infoCard: InfoCard,
@@ -82,6 +87,8 @@ fun AttendanceScreen(
     val formFields by viewModel.formFields.collectAsStateWithLifecycle()
     val fieldState by viewModel.fieldState.collectAsStateWithLifecycle()
     val formData by viewModel.formData.collectAsStateWithLifecycle()
+    val displayReasonField by viewModel.displayReasonField.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
 
     var canTakeAttendance by remember {
         mutableStateOf(false)
@@ -104,7 +111,9 @@ fun AttendanceScreen(
         )
     }
 
-    if (attendanceStep == ButtonStep.SAVING) {
+    if (attendanceStep == ButtonStep.SAVING && !viewModel.hasInvalidAbsence()
+        && viewModel.hasTakenAllStudentAttendance()
+    ) {
         AttendanceSummaryDialog(
             title = stringResource(R.string.attendance_summary),
             data = viewModel.getSummary(),
@@ -138,21 +147,43 @@ fun AttendanceScreen(
         }
     }
 
+    if ((attendanceStep == ButtonStep.SAVING || attendanceStep == ButtonStep.HOLD_SAVING) && viewModel.hasInvalidAbsence()) {
+        viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING)
+        LaunchedEffect(key1 = snackbarHostState) {
+            snackbarHostState.showSnackbar(
+                message = errorMessage.orEmpty(),
+                duration = SnackbarDuration.Short,
+            )
+        }
+    }
+
+    if (
+        (attendanceStep == ButtonStep.SAVING || attendanceStep == ButtonStep.HOLD_SAVING) && !viewModel.hasInvalidAbsence()
+        && !viewModel.hasTakenAllStudentAttendance()
+    ) {
+        viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING)
+        LaunchedEffect(key1 = snackbarHostState) {
+            snackbarHostState.showSnackbar(
+                message = context.getString(R.string.you_must_record_for_all),
+                duration = SnackbarDuration.Short,
+            )
+        }
+    }
+
     if (launchBulkAssign) {
         BulkAssignComponent(
             onDismissRequest = { launchBulkAssign = false },
             attendanceOptions = attendanceOptions,
-            onAttendanceStatus = { status ->
+            onAttendanceStatus = { status, key ->
                 isBulk = true
                 viewModel.bulkAttendance(
-                    //index = status.first,
+                    key = key,
                     value = status.second,
-                    //color = status.third,
                 )
                 launchBulkAssign = false
             },
             onClear = {
-                viewModel.clearCache()
+                viewModel.cleanAllEvent()
             },
             onCancel = { launchBulkAssign = false },
         )
@@ -232,7 +263,7 @@ fun AttendanceScreen(
                     if (attendanceStep == ButtonStep.HOLD_SAVING) {
                         isAttendanceCompleted = false
                         viewModel.setAttendanceStep(ButtonStep.SAVING)
-                    } else if (canTakeAttendance) {
+                    } else if (canTakeAttendance && !viewModel.hasInvalidAbsence()) {
                         viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING)
                     }
                 },
@@ -244,7 +275,10 @@ fun AttendanceScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    containerColor = light_success,
+                    containerColor = when {
+                        errorMessage.isNullOrEmpty() && viewModel.hasTakenAllStudentAttendance() -> light_success
+                        else -> light_error
+                    },
                     contentColor = Color.White,
                 ) {
                     Row(
@@ -252,7 +286,14 @@ fun AttendanceScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.success_icon),
+                            painter = painterResource(
+                                when {
+                                    errorMessage.isNullOrEmpty()
+                                        && viewModel.hasTakenAllStudentAttendance() -> R.drawable.success_icon
+
+                                    else -> R.drawable.ic_error_outline
+                                }
+                            ),
                             contentDescription = it.visuals.message,
                         )
 
@@ -332,19 +373,19 @@ fun AttendanceScreen(
                             formFields = formFields,
                             fieldsState = fieldState,
                             formData = formData,
+                            displayReason = displayReasonField,
                             attendanceStep = attendanceStep,
+                            hasInvalidData = !viewModel.hasInvalidAbsence(),
                             isEnabled = !isInactive,
                             student = student,
                             card = card,
                             setAttendance = { index, ou, tei, value, reasonOfAbsence, color, hasPersisted ->
                                 viewModel.setAttendance(
-                                    index,
                                     ou,
                                     tei,
                                     student.selectedEnrollment.uid().orEmpty(),
                                     value,
                                     reasonOfAbsence,
-                                    color,
                                     hasPersisted,
                                 )
                             },
@@ -361,7 +402,7 @@ fun AttendanceScreen(
                             },
                             setAbsenceState = viewModel::fieldState,
                             onNext = { tei, ou, fieldData ->
-                                viewModel.setAbsence(reasonOfAbsence = fieldData.second)
+                                viewModel.setAbsence(tei = tei, ou = ou, reasonOfAbsence = fieldData.second)
                                 viewModel.save()
                             },
                         )
