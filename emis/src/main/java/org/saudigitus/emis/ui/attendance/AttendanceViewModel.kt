@@ -5,11 +5,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.hisp.dhis.android.core.common.ValueType
@@ -29,7 +28,6 @@ import org.saudigitus.emis.utils.DateHelper
 import org.saudigitus.emis.utils.Utils.WHITE
 import org.saudigitus.emis.utils.getOption
 import timber.log.Timber
-import java.math.BigDecimal
 import javax.inject.Inject
 
 @HiltViewModel
@@ -275,6 +273,7 @@ class AttendanceViewModel
     // -------------------------------
 
     fun setAttendance(
+        key: String? = null,
         ou: String,
         tei: String,
         enrollment: String,
@@ -284,12 +283,13 @@ class AttendanceViewModel
     ) {
         viewModelScope.launch {
             setAttendanceInternal(
-                ou,
-                tei,
-                enrollment,
-                value,
-                reasonOfAbsence,
-                hasPersisted
+                key = key,
+                ou = ou,
+                tei = tei,
+                enrollment = enrollment,
+                value = value,
+                reasonOfAbsence = reasonOfAbsence,
+                hasPersisted = hasPersisted
             )
         }
     }
@@ -353,6 +353,7 @@ class AttendanceViewModel
 
 
     private suspend fun setAttendanceInternal(
+        key: String? = null,
         ou: String,
         tei: String,
         enrollment: String,
@@ -403,6 +404,7 @@ class AttendanceViewModel
                 programStage = datastoreAttendance.value?.programStage.orEmpty(),
                 attendance = updatedEntity,
             )
+            delay(200L)
             _attendanceStatus.value = attendanceCache.toList()
         }
     }
@@ -460,6 +462,7 @@ class AttendanceViewModel
                 )
             }
             _attendanceStep.value = ButtonStep.EDITING
+            delay(50L)
             onSuccess()
         }
     }
@@ -499,7 +502,7 @@ class AttendanceViewModel
         return attendanceCache.any { item ->
             val isAbsent = item.value == absentCode
             isAbsent && item.reasonOfAbsence.isNullOrEmpty()
-        }
+        } && attendanceStep.value != ButtonStep.EDITING
     }
 
     fun hasTakenAllStudentAttendance(): Boolean {
@@ -559,7 +562,10 @@ class AttendanceViewModel
     }
 
     fun refreshOnSave() {
-        reset()
-        setProgram(program.value)
+        viewModelScope.launch {
+            reset()
+            delay(300L)
+            setProgram(program.value)
+        }
     }
 }

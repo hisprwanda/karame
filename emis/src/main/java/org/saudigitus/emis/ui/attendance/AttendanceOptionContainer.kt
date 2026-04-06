@@ -60,12 +60,11 @@ fun AttendanceOptionContainer(
     isEnabled: Boolean = true,
     displayReason: Boolean = true,
     setAttendance: (
-        index: Int,
+        key: String?,
         ou: String,
         tei: String,
         value: String,
         reasonOfAbsence: String?,
-        color: Color?,
         hasPersisted: Boolean,
     ) -> Unit,
     setTEIAbsence: (index: Int, tei: String, value: String, color: Color?) -> Unit,
@@ -130,12 +129,11 @@ fun AttendanceOptionContainer(
                     isEnabled = isEnabled,
                 ) { index, key, tei, attendance, color ->
                     setAttendance(
-                        index,
+                        key,
                         student.tei.organisationUnit().orEmpty(),
                         tei ?: student.tei.uid(),
                         attendance,
                         null,
-                        color,
                         true,
                     )
                     if (key.lowercase() == ABSENT) {

@@ -128,11 +128,14 @@ fun AttendanceScreen(
                     isBulk = false
                     sync.invoke {
                         viewModel.refreshOnSave()
+                        navController.navigateUp()
                     }
                 }
             } else {
+                viewModel.setAttendanceStep(ButtonStep.EDITING)
                 sync.invoke {
                     viewModel.refreshOnSave()
+                    navController.navigateUp()
                 }
             }
         }
@@ -379,8 +382,9 @@ fun AttendanceScreen(
                             isEnabled = !isInactive,
                             student = student,
                             card = card,
-                            setAttendance = { index, ou, tei, value, reasonOfAbsence, color, hasPersisted ->
+                            setAttendance = { key, ou, tei, value, reasonOfAbsence, hasPersisted ->
                                 viewModel.setAttendance(
+                                    key,
                                     ou,
                                     tei,
                                     student.selectedEnrollment.uid().orEmpty(),
