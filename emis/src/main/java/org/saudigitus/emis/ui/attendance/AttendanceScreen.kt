@@ -175,13 +175,14 @@ fun AttendanceScreen(
         (attendanceStep == ButtonStep.SAVING || attendanceStep == ButtonStep.HOLD_SAVING) && (!viewModel.hasInvalidAbsence()
             || !viewModel.hasTakenAllStudentAttendance())
     ) {
-        Log.e("TRIGGER_1", "TRIGGER_1")
-        viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING)
-        LaunchedEffect(key1 = attendanceStep) {
-            snackbarHostState.showSnackbar(
-                message = context.getString(R.string.you_must_record_for_all),
-                duration = SnackbarDuration.Short,
-            )
+        if (!viewModel.hasTakenAllStudentAttendance()) {
+            viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING)
+            LaunchedEffect(key1 = attendanceStep) {
+                snackbarHostState.showSnackbar(
+                    message = context.getString(R.string.you_must_record_for_all),
+                    duration = SnackbarDuration.Short,
+                )
+            }
         }
     }
 
