@@ -97,12 +97,18 @@ class DataManagerImpl
     ): Unit =
         withContext(Dispatchers.IO) {
             try {
-                val uid = eventUid(
+                val oldEvent = eventUid(
                     attendance.tei,
                     program,
                     programStage,
                     attendance.date,
-                ) ?: createEventProjection(
+                )
+
+                if (!oldEvent.isNullOrEmpty()) {
+                    d2.eventModule().events().uid(oldEvent).blockingDeleteIfExist()
+                }
+
+                val uid = createEventProjection(
                     attendance.enrollment,
                     ou,
                     program,

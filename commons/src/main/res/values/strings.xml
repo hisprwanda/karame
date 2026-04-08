@@ -309,4 +309,5 @@
     <string name="syncing">Synchronizing...</string>
     <string name="remove">Remove</string>
     <string name="server_is_unavailable">The server is currently unavailable. We’re working on it, please try again soon.</string>
+    <string name="select_reason_for_all">Please select a reason for all absent students</string>
 </resources>

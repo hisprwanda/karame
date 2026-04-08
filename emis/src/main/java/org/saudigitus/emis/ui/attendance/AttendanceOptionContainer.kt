@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -21,12 +20,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dhis2.commons.ui.model.ListCardUiModel
-import org.dhis2.ui.theme.colorPrimary
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
@@ -67,7 +64,7 @@ fun AttendanceOptionContainer(
         reasonOfAbsence: String?,
         hasPersisted: Boolean,
     ) -> Unit,
-    setTEIAbsence: (index: Int, tei: String, value: String, color: Color?) -> Unit,
+    setTEIAbsence: (ou: String, tei: String, value: String) -> Unit,
     setAbsenceState: (
         key: String,
         event: String,
@@ -138,7 +135,6 @@ fun AttendanceOptionContainer(
                     )
                     if (key.lowercase() == ABSENT) {
                         isAbsent = true
-                        setTEIAbsence(index, tei ?: student.tei.uid(), attendance, color)
                     } else {
                         isAbsent = false
                         has2BVisible = false

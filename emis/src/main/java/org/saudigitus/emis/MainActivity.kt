@@ -253,7 +253,10 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun syncProgram(refresh : (() -> Unit)? = null) {
+    private fun syncProgram(
+        refresh : (() -> Unit)? = null,
+        offlineAction: (() -> Unit)? = null,
+    ) {
         if (networkUtils.isOnline()) {
             SyncDialog(
                 activity = this@MainActivity,
@@ -279,6 +282,7 @@ class MainActivity : FragmentActivity() {
                 getString(R.string.sync_offline_check_connection),
                 Snackbar.LENGTH_SHORT,
             ).show()
+            offlineAction?.invoke()
         }
     }
 

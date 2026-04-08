@@ -2,6 +2,9 @@ package org.dhis2.usescases.main.program
 
 import io.reactivex.Flowable
 import io.reactivex.parallel.ParallelFlowable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.dhis2.commons.bindings.isStockProgram
 import org.dhis2.commons.bindings.stockUseCase
 import org.dhis2.commons.filters.data.FilterPresenter
@@ -58,7 +61,7 @@ internal class ProgramRepositoryImpl(
         baseProgramCache = emptyList()
     }
 
-    private fun isSEMIS(program: String): Boolean {
+    private suspend fun isSEMIS(program: String) = withContext(Dispatchers.IO) {
         val dataStore = d2.dataStoreModule()
             .dataStore()
             .byNamespace().eq("semis")
@@ -66,7 +69,7 @@ internal class ProgramRepositoryImpl(
             .one().blockingGet()
 
         val config = EMISConfig.fromJson(dataStore?.value()) ?: emptyList()
-        return config.find { it.program == program } != null
+        return@withContext config.find { it.program == program } != null
     }
 
     private fun aggregatesModels(): Flowable<List<ProgramUiModel>> {
@@ -127,7 +130,7 @@ internal class ProgramRepositoryImpl(
                     } else {
                         null
                     },
-                    isSEMIS = isSEMIS(program.uid()),
+                    isSEMIS = runBlocking { isSEMIS(program.uid()) },
                 )
             }.toList().toFlowable().blockingFirst()
     }

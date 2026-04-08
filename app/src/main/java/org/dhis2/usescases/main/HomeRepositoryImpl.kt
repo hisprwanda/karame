@@ -3,6 +3,9 @@ package org.dhis2.usescases.main
 import dhis2.org.analytics.charts.Charts
 import io.reactivex.Completable
 import io.reactivex.Single
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.dhis2.commons.bindings.dataSet
 import org.dhis2.commons.bindings.dataSetInstanceSummaries
 import org.dhis2.commons.bindings.isStockProgram
@@ -67,7 +70,7 @@ class HomeRepositoryImpl(
         return d2.programs().size + d2.dataSetInstanceSummaries().size
     }
 
-    private fun isSEMIS(program: String): Boolean {
+    private suspend fun isSEMIS(program: String) = withContext(Dispatchers.IO) {
         val dataStore = d2.dataStoreModule()
             .dataStore()
             .byNamespace().eq("semis")
@@ -75,7 +78,7 @@ class HomeRepositoryImpl(
             .one().blockingGet()
 
         val config = EMISConfig.fromJson(dataStore?.value()) ?: emptyList()
-        return config.find { it.program == program } != null
+        return@withContext config.find { it.program == program } != null
     }
 
     override fun singleHomeItemData(): HomeItemData? {
@@ -94,7 +97,7 @@ class HomeRepositoryImpl(
                     } else {
                         null
                     },
-                    isSEMIS = isSEMIS(program.uid()),
+                    isSEMIS = runBlocking { isSEMIS(program.uid()) },
                 )
 
             program?.programType() == ProgramType.WITHOUT_REGISTRATION ->

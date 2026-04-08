@@ -77,20 +77,24 @@ class SyncHelperRepository @Inject constructor(
                             pruneNotOwnedTEs(trackerSet.toList())
                         }
                     }.onFailure {
-                        Toast.makeText(
-                            resourceManager.context,
-                            resourceManager.getString(R.string.internet_connection_is_unstable),
-                            Toast.LENGTH_LONG
-                        )
-                            .show()
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                resourceManager.context,
+                                resourceManager.getString(R.string.internet_connection_is_unstable),
+                                Toast.LENGTH_LONG
+                            )
+                                .show()
+                        }
                     }
             } else if (!checkServerAvailability()) {
-                Toast.makeText(
-                    resourceManager.context,
-                    resourceManager.getString(R.string.server_is_unavailable),
-                    Toast.LENGTH_LONG
-                )
-                    .show()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        resourceManager.context,
+                        resourceManager.getString(R.string.server_is_unavailable),
+                        Toast.LENGTH_LONG
+                    )
+                        .show()
+                }
             } else {
                 pruneNotOwnedTEs(trackerSet.toList())
             }
