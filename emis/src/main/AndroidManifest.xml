@@ -8,7 +8,9 @@
     <application
         android:allowBackup="false">
         <activity
-            android:name=".MainActivity"/>
+            android:name=".MainActivity"
+            android:screenOrientation="portrait"
+            />
     </application>
 
 </manifest>

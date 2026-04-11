@@ -77,12 +77,8 @@ fun AttendanceOptionContainer(
         ou: String,
         fieldData: Triple<String, String?, ValueType?>,
     ) -> Unit,
+    isAbsent: (String, Boolean) -> Unit
 ) {
-    var isAbsent by rememberSaveable { mutableStateOf(false) }
-    var has2BVisible by rememberSaveable {
-        mutableStateOf(formData.isVisible(student.tei.uid()))
-    }
-
     Column(
         modifier = Modifier
             .padding(bottom = 5.dp)
@@ -133,18 +129,12 @@ fun AttendanceOptionContainer(
                         null,
                         true,
                     )
-                    if (key.lowercase() == ABSENT) {
-                        isAbsent = true
-                    } else {
-                        isAbsent = false
-                        has2BVisible = false
-                    }
                 }
             }
         }
         AbsenceForm(
-            visibility = isAbsent || formData.isVisible(student.tei.uid()) || displayReason,
-            enabled = attendanceStep == ButtonStep.HOLD_SAVING && !hasInvalidData,
+            visibility = displayReason || formData.isVisible(student.tei.uid()),
+            enabled = attendanceStep != ButtonStep.EDITING,
             student = student,
             formFields = formFields,
             fieldsState = fieldsState,

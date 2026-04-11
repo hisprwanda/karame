@@ -162,12 +162,14 @@ fun AttendanceScreen(
     }
 
     if ((attendanceStep == ButtonStep.SAVING || attendanceStep == ButtonStep.HOLD_SAVING) && viewModel.hasInvalidAbsence()) {
-        viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING)
-        LaunchedEffect(key1 = errorMessage) {
-            snackbarHostState.showSnackbar(
-                message = errorMessage.orEmpty(),
-                duration = SnackbarDuration.Short,
-            )
+        if (viewModel.hasInvalidAbsence()) {
+            viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING)
+            LaunchedEffect(key1 = attendanceStep) {
+                snackbarHostState.showSnackbar(
+                    message = context.getString(org.dhis2.commons.R.string.select_reason_for_all),
+                    duration = SnackbarDuration.Short,
+                )
+            }
         }
     }
 
@@ -284,7 +286,7 @@ fun AttendanceScreen(
                     if (attendanceStep == ButtonStep.HOLD_SAVING) {
                         isAttendanceCompleted = false
                         viewModel.setAttendanceStep(ButtonStep.SAVING)
-                    } else if (canTakeAttendance && !viewModel.hasInvalidAbsence()) {
+                    } else if (canTakeAttendance) {
                         viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING)
                     }
                 },
@@ -297,7 +299,7 @@ fun AttendanceScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                     containerColor = when {
-                        errorMessage.isNullOrEmpty() && viewModel.hasTakenAllStudentAttendance() -> light_success
+                        viewModel.hasTakenAllStudentAttendance() -> light_success
                         else -> light_error
                     },
                     contentColor = Color.White,
@@ -309,8 +311,7 @@ fun AttendanceScreen(
                         Icon(
                             painter = painterResource(
                                 when {
-                                    errorMessage.isNullOrEmpty()
-                                        && viewModel.hasTakenAllStudentAttendance() -> R.drawable.success_icon
+                                    viewModel.hasTakenAllStudentAttendance() -> R.drawable.success_icon
 
                                     else -> R.drawable.ic_error_outline
                                 }
@@ -417,6 +418,9 @@ fun AttendanceScreen(
                                 viewModel.setAbsence(tei, fieldData.second.orEmpty())
                                 //viewModel.save()
                             },
+                            isAbsent = { tei, status ->
+                                viewModel.displayAbsenceReason(tei, status)
+                            }
                         )
                     }
                 }

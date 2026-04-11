@@ -86,7 +86,7 @@ class SyncHelperRepository @Inject constructor(
                                 .show()
                         }
                     }
-            } else if (!checkServerAvailability()) {
+            } else if (!checkServerAvailability() && networkUtils.isOnline()) {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         resourceManager.context,

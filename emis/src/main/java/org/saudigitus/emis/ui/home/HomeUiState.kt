@@ -1,6 +1,7 @@
 package org.saudigitus.emis.ui.home
 
 import android.os.Bundle
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import org.saudigitus.emis.data.model.Module
 import org.saudigitus.emis.data.model.OU
@@ -10,7 +11,7 @@ import org.saudigitus.emis.ui.components.InfoCard
 import org.saudigitus.emis.ui.components.ToolbarHeaders
 import org.saudigitus.emis.utils.Constants
 
-@Stable
+@Immutable
 data class HomeUiState(
     val isLoading: Boolean = true,
     val isFetchingTei: Boolean = false,
