@@ -286,15 +286,20 @@ class AttendanceViewModel
         hasPersisted: Boolean = true,
     ) {
         viewModelScope.launch {
-            setAttendanceInternal(
-                key = key,
-                ou = ou,
-                tei = tei,
-                enrollment = enrollment,
-                value = value,
-                reasonOfAbsence = null,
-                hasPersisted = hasPersisted
-            )
+            try {
+                setAttendanceInternal(
+                    key = key,
+                    ou = ou,
+                    tei = tei,
+                    enrollment = enrollment,
+                    value = value,
+                    reasonOfAbsence = null,
+                    hasPersisted = hasPersisted
+                )
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Timber.tag("ATTENDANCE_DATA").e(e)
+            }
         }
     }
 

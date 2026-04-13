@@ -1,5 +1,6 @@
 package org.saudigitus.emis.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -227,6 +228,7 @@ data class InfoCard(
     val orgUnitName: String = "",
     val teiCount: Int = 0,
     val isStaff: Boolean = false,
+    val displayBoolean: Boolean = true,
 ) {
     fun hasData(): Boolean {
         return teiCount > 0
@@ -241,77 +243,79 @@ fun ShowCard(
     onClick: () -> Unit = {},
     onIconClick: () -> Unit = {},
 ) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        onClick = onClick,
-    ) {
-        Column(
+    AnimatedVisibility(infoCard.displayBoolean) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(5.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            onClick = onClick,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(5.dp),
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth()
-                        .weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        Icons.Rounded.School,
-                        tint = Color(0xFF2C98F0),
-                        contentDescription = "Icon",
-                    )
-                    Spacer(modifier = Modifier.size(10.dp))
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.Center
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .weight(1f),
                     ) {
-                        val hasGradeOrSection =
-                            infoCard.grade.isNotEmpty() || infoCard.section.isNotEmpty()
+                        Icon(
+                            Icons.Rounded.School,
+                            tint = Color(0xFF2C98F0),
+                            contentDescription = "Icon",
+                        )
+                        Spacer(modifier = Modifier.size(10.dp))
 
-                        if (hasGradeOrSection) {
-                            val gradeLabel = listOfNotNull(infoCard.grade, infoCard.section)
-                                .filter { it.isNotEmpty() }
-                                .joinToString(separator = ", ")
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            val hasGradeOrSection =
+                                infoCard.grade.isNotEmpty() || infoCard.section.isNotEmpty()
+
+                            if (hasGradeOrSection) {
+                                val gradeLabel = listOfNotNull(infoCard.grade, infoCard.section)
+                                    .filter { it.isNotEmpty() }
+                                    .joinToString(separator = ", ")
+
+                                Text(
+                                    text = gradeLabel,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
 
                             Text(
-                                text = gradeLabel,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp,
+                                text = "${infoCard.academicYear} | ${infoCard.orgUnitName}",
+                                fontSize = 14.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-
-                        Text(
-                            text = "${infoCard.academicYear} | ${infoCard.orgUnitName}",
-                            fontSize = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
                     }
-                }
 
-                if (enableTEICount) {
-                    TEICountComponent(teiCount = infoCard.teiCount)
-                } else {
-                    IconButton(
-                        onClick = onIconClick,
-                        enabled = enabledIconButton,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Rocket,
-                            contentDescription = null,
-                            tint = Color(0xFF2C98F0),
-                        )
+                    if (enableTEICount) {
+                        TEICountComponent(teiCount = infoCard.teiCount)
+                    } else {
+                        IconButton(
+                            onClick = onIconClick,
+                            enabled = enabledIconButton,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Rocket,
+                                contentDescription = null,
+                                tint = Color(0xFF2C98F0),
+                            )
+                        }
                     }
                 }
             }

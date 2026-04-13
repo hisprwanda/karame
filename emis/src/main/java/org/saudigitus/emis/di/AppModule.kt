@@ -12,13 +12,16 @@ import org.dhis2.form.ui.provider.HintProvider
 import org.dhis2.form.ui.provider.HintProviderImpl
 import org.hisp.dhis.android.core.D2
 import org.saudigitus.emis.data.local.AnalyticsRepository
+import org.saudigitus.emis.data.local.AttendanceRepository
 import org.saudigitus.emis.data.local.DataManager
 import org.saudigitus.emis.data.local.FormRepository
 import org.saudigitus.emis.data.local.UserPreferencesRepository
 import org.saudigitus.emis.data.local.repository.AnalyticsRepositoryImpl
+import org.saudigitus.emis.data.local.repository.AttendanceRepositoryImpl
 import org.saudigitus.emis.data.local.repository.DataManagerImpl
 import org.saudigitus.emis.data.local.repository.FormRepositoryImpl
 import org.saudigitus.emis.data.local.repository.UserPreferencesRepositoryImpl
+import org.saudigitus.emis.data.local.util.AttendanceTransformation
 import org.saudigitus.emis.helper.ISEMISSync
 import org.saudigitus.emis.helper.SEMISSync
 import org.saudigitus.emis.service.RuleEngineRepository
@@ -50,6 +53,11 @@ object AppModule {
     @Provides
     @Singleton
     fun providesTransformations(d2: D2): Transformations = Transformations(d2)
+
+    @Provides
+    @Singleton
+    fun provideAttendanceTransformations(d2: D2, transformations: Transformations) =
+        AttendanceTransformation(d2, transformations)
 
     @Provides
     @Singleton
@@ -87,6 +95,16 @@ object AppModule {
     ): FormRepository {
         return FormRepositoryImpl(d2, hintProvider, dataManager)
     }
+
+
+    @Provides
+    @Singleton
+    fun providesAttendanceRepository(
+        d2: D2,
+        dataManager: DataManager,
+        attendanceTransformation: AttendanceTransformation
+    ): AttendanceRepository =
+        AttendanceRepositoryImpl(d2, dataManager, attendanceTransformation)
 
     @Provides
     @Singleton

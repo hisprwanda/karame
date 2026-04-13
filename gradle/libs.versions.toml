@@ -1,14 +1,14 @@
 [versions]
 sdk = "35"
 minSdk = "21"
-vCode = "151"
+vCode = "152"
 vName = "3.1.0.1"
 gradle = "8.6.1"
 kotlin = '2.0.20'
 hilt = '2.47'
 androidxNavigation = "2.6.0"
 androidxHiltNavigation = "1.0.0"
-semis = "1.5.3-rc05"
+semis = "1.5.3-rc06"
 
 jacoco = '0.8.10'
 designSystem = "0.4.0.1"

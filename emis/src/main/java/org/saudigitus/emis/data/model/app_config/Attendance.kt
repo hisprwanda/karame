@@ -10,6 +10,8 @@ data class Attendance(
     val absenceReason: String?,
     @JsonProperty("enabled")
     val enabled: Boolean?,
+    @JsonProperty("attendanceStatus")
+    val attendanceStatus: AttendanceStatus?,
     @JsonProperty("lastUpdate")
     val lastUpdate: String?,
     @JsonProperty("programStage")

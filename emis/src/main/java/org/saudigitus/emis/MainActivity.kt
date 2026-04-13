@@ -107,22 +107,16 @@ class MainActivity : FragmentActivity() {
                                 },
                             ),
                         ) {
-                            val attendanceViewModel: AttendanceViewModel = hiltViewModel()
+                            val attendanceViewModel: org.saudigitus.emis.ui.attendance2.AttendanceViewModel = hiltViewModel()
                             val teis by viewModel.teis.collectAsStateWithLifecycle()
-                            val infoCard by attendanceViewModel.infoCard.collectAsStateWithLifecycle()
+                            val infoCard by viewModel.infoCard.collectAsStateWithLifecycle()
 
-                            attendanceViewModel.setDefaults(stringResource(R.string.attendance))
 
-                            attendanceViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
-                            attendanceViewModel.setTeis(teis)
-                            attendanceViewModel.setInfoCard(viewModel.infoCard.collectAsStateWithLifecycle().value)
-                            attendanceViewModel.setOU(it.arguments?.getString("ou") ?: "")
-
-                            AttendanceScreen(
-                                navController,
-                                this@MainActivity.supportFragmentManager,
+                            org.saudigitus.emis.ui.attendance2.AttendanceScreen(
                                 attendanceViewModel,
                                 teiCardMapper,
+                                intent?.extras?.getString(Constants.PROGRAM_UID).orEmpty(),
+                                teis,
                                 infoCard,
                                 navController::navigateUp,
                                 ::syncProgram,

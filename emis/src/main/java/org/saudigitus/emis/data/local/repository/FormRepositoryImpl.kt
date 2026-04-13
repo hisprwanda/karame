@@ -18,8 +18,10 @@ import org.saudigitus.emis.data.local.DataManager
 import org.saudigitus.emis.data.local.FormRepository
 import org.saudigitus.emis.data.model.EventTuple
 import org.saudigitus.emis.data.model.Option
+import org.saudigitus.emis.data.model.ProgramStageDataElementModel
 import org.saudigitus.emis.ui.form.FormData
 import org.saudigitus.emis.ui.form.FormField
+import org.saudigitus.emis.ui.form.attendance.models.FormFieldState
 import org.saudigitus.emis.utils.Constants
 import org.saudigitus.emis.utils.DateHelper
 import timber.log.Timber
@@ -122,6 +124,29 @@ class FormRepositoryImpl
             }
     }
 
+    override suspend fun getFormFields(
+        program: String,
+        stage: String,
+        dl: String?
+    ) = withContext(Dispatchers.IO) {
+        getProgramStageDataElements(stage, dl)
+            .map {
+                val options = getOptions(program, it.dataElement?.uid().orEmpty())
+
+                FormFieldState(
+                    dataElementUid = it.dataElement?.uid().orEmpty(),
+                    label = it.dataElement?.displayFormName()
+                        .orEmpty(),
+                    valueType = it.dataElement?.valueType() ?: ValueType.TEXT,
+                    optionSet = options,
+                    mandatory = it.compulsory == true,
+                )
+            }
+
+
+    }
+
+
     override suspend fun getOptions(
         program: String,
         dataElement: String,
@@ -165,7 +190,7 @@ class FormRepositoryImpl
         dataElement: String,
     ): FormData? {
         val dataValue = event.trackedEntityDataValues()?.find { it.dataElement() == dataElement }
-        val tei = d2.enrollment(event.enrollment().toString())?.trackedEntityInstance() ?: ""
+        val tei = d2.enrollment(event.enrollment().toString())?.trackedEntityInstance().orEmpty()
 
         val dl = d2.dataElement(dataElement)
         val options = this.getOptions(program, dataElement)
@@ -189,6 +214,51 @@ class FormRepositoryImpl
             )
         } else {
             null
+        }
+    }
+
+    private suspend fun getProgramStageDataElements(
+        stage: String,
+        dl: String?
+    ) = withContext(Dispatchers.IO) {
+        val repository = d2.programModule().programStageDataElements()
+            .byProgramStage().eq(stage)
+
+        if (dl != null) {
+            repository.byDataElement().eq(dl)
+                .blockingGet().map {
+                    val dataElement =
+                        d2.dataElementModule().dataElements().uid(it.dataElement()?.uid())
+                            .blockingGet()
+
+                    ProgramStageDataElementModel(
+                        programStageUid = it.programStage()?.uid(),
+                        code = it.code(),
+                        displayName = it.displayName(),
+                        dataElement = dataElement,
+                        compulsory = it.compulsory(),
+                        renderType = it.renderType(),
+                        allowFutureDate = it.allowFutureDate(),
+                        sortOrder = it.sortOrder()
+                    )
+                }
+        } else {
+            repository.blockingGet().map {
+                val dataElement =
+                    d2.dataElementModule().dataElements().uid(it.dataElement()?.uid())
+                        .blockingGet()
+
+                ProgramStageDataElementModel(
+                    programStageUid = it.programStage()?.uid(),
+                    code = it.code(),
+                    displayName = it.displayName(),
+                    dataElement = dataElement,
+                    compulsory = it.compulsory(),
+                    renderType = it.renderType(),
+                    allowFutureDate = it.allowFutureDate(),
+                    sortOrder = it.sortOrder()
+                )
+            }
         }
     }
 }

@@ -71,7 +71,7 @@ android {
     testNamespace = "org.dhis2.test"
 
     base {
-        archivesName.set("dhis2-v" + libs.versions.vName.get())
+        archivesName.set("karame-v" + libs.versions.semis.get())
     }
 
     defaultConfig {
@@ -80,7 +80,7 @@ android {
         targetSdk = libs.versions.sdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
         versionCode = libs.versions.vCode.get().toInt()
-        versionName = libs.versions.vName.get()
+        versionName = libs.versions.semis.get()
         testInstrumentationRunner = "org.dhis2.Dhis2Runner"
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled = true
@@ -89,6 +89,7 @@ android {
 
         buildConfigField("String", "SDK_VERSION", "\"" + libs.versions.dhis2sdk.get() + "\"")
         buildConfigField("String", "SEMIS_VERSION", "\"" + libs.versions.semis.get() + "\"")
+        buildConfigField("String", "CAPTURE_APP_VERSION", "\"" + libs.versions.vName.get() + "\"")
         buildConfigField("String", "MATOMO_URL", "\"https://usage.analytics.dhis2.org/matomo.php\"")
         buildConfigField("long", "VERSION_CODE", "${defaultConfig.versionCode}")
         buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
@@ -162,21 +163,21 @@ android {
             applicationId = "com.mineduc.karame"
             dimension = "default"
             versionCode = libs.versions.vCode.get().toInt()
-            versionName = libs.versions.vName.get()
+            versionName = libs.versions.semis.get()
         }
 
         create("dhisPlayServices") {
             applicationId = "com.mineduc.karame"
             dimension = "default"
             versionCode = libs.versions.vCode.get().toInt()
-            versionName = libs.versions.vName.get()
+            versionName = libs.versions.semis.get()
         }
 
         create("dhisUITesting") {
             applicationId = "com.mineduc.karame"
             dimension = "default"
             versionCode = libs.versions.vCode.get().toInt()
-            versionName = libs.versions.vName.get()
+            versionName = libs.versions.semis.get()
         }
     }
 
@@ -228,7 +229,7 @@ android {
                         else -> ""
                     }
 
-                    output.outputFileName = "dhis2-v${libs.versions.vName.get()}$suffix.apk"
+                    output.outputFileName = "karame-v${libs.versions.semis.get()}$suffix.apk"
                 }
             }
 

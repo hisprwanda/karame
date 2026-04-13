@@ -17,6 +17,8 @@ object Utils {
     const val ORANGE = 0xFFFFB74D
     const val WHITE = 0xFFFFFFFF
 
+    const val GRAY = 0xFF888888
+
     fun getIconByName(name: String) = when (name) {
         "correct_blue_fill" -> R.drawable.present
         "wrong_red_fill" -> R.drawable.absent
@@ -50,7 +52,7 @@ object Utils {
         }
     }
 
-    private fun getAttendanceStatusColor(key: String): Color {
+    fun getAttendanceStatusColor(key: String): Color {
         return when (key) {
             "present" -> Color(0xFF81C784)
             "absent" -> Color(0xFFE57373)
