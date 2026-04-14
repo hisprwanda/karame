@@ -54,7 +54,7 @@ class AttendanceViewModel @Inject constructor(
     private var cachedButtonModel: AttendanceButtonModel? = null
 
     private val _hasCachedData = MutableStateFlow(false)
-    private val hasCachedData: StateFlow<Boolean> = _hasCachedData
+    val hasCachedData: StateFlow<Boolean> = _hasCachedData
 
     private val _snackbarEvent = MutableSharedFlow<String?>(
         replay = 0,
@@ -79,7 +79,7 @@ class AttendanceViewModel @Inject constructor(
     val uiState = _uiState
         .stateIn(
             viewModelScope,
-            SharingStarted.Eagerly,
+            SharingStarted.WhileSubscribed(5000L),
             _uiState.value,
         )
 
@@ -260,6 +260,7 @@ class AttendanceViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val currentState = uiState.value as AttendanceUiState.HasAttendance
+            _hasCachedData.value = true
 
             val updatedAttendanceButtonState = attendanceRepository.updateAttendanceEvent(
                 eventDate = currentState.selectedDate,
@@ -318,6 +319,7 @@ class AttendanceViewModel @Inject constructor(
         val currentState = uiState.value as AttendanceUiState.HasAttendance
         val currentButtonState = currentState.attendanceButtonState
         val attendanceEvents = currentButtonState.attendanceEvents.toMutableList()
+        _hasCachedData.value = true
 
         val event = attendanceEvents.find { it.event?.tei == tei }
 
@@ -369,6 +371,7 @@ class AttendanceViewModel @Inject constructor(
     private fun clearAllEvents() {
         val currentState = uiState.value as AttendanceUiState.HasAttendance
         val updatedButtonState = attendanceRepository.clearAll(currentState.attendanceButtonState)
+        _hasCachedData.value = true
 
         _uiState.value = currentState.copy(
             attendanceButtonState = updatedButtonState,
@@ -485,11 +488,13 @@ class AttendanceViewModel @Inject constructor(
         viewModelScope.launch {
             val currentState = uiState.value as AttendanceUiState.HasAttendance
             val currentButtonState = currentState.attendanceButtonState
+            _hasCachedData.value = false
 
             _uiState.value = currentState.copy(
                 attendanceStep = ButtonStep.EDITING,
                 attendanceButtonState = currentButtonState.copy(isEditing = false),
-                execSync = false
+                execSync = false,
+                displayReasonField = emptyMap(),
             )
             delay(10L)
             loadAttendanceEventsByDate(currentState.selectedDate)

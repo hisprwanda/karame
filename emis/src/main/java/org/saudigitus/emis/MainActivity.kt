@@ -113,6 +113,7 @@ class MainActivity : FragmentActivity() {
 
 
                             org.saudigitus.emis.ui.attendance2.AttendanceScreen(
+                                this@MainActivity,
                                 attendanceViewModel,
                                 teiCardMapper,
                                 intent?.extras?.getString(Constants.PROGRAM_UID).orEmpty(),

@@ -310,4 +310,6 @@
     <string name="remove">Remove</string>
     <string name="server_is_unavailable">The server is currently unavailable. We’re working on it, please try again soon.</string>
     <string name="select_reason_for_all">Please select a reason for all absent students</string>
+    <string name="attendance_not_saved">You have unsaved attendance changes. If you go back now, your data will be discarded.</string>
+    <string name="not_saved">Not saved</string>
 </resources>
