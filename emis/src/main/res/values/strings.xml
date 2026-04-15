@@ -6,7 +6,7 @@
     <string name="back">Back</string>
     <string name="cls">Class...</string>
     <string name="grade">Grade...</string>
-    <string name="school">School...</string>
+    <string name="school">Class...</string>
     <string name="academic_year">Academic year...</string>
     <string name="search_no_results">There are no results for this search</string>
     <string name="start_search">Select filters to list</string>
