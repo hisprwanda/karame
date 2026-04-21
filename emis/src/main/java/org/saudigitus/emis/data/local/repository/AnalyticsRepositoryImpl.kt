@@ -18,6 +18,7 @@ import org.saudigitus.emis.data.model.Visualization
 import org.saudigitus.emis.data.model.schoolcalendar_config.AcademicYear
 import org.saudigitus.emis.utils.Constants
 import org.saudigitus.emis.utils.Utils
+import org.saudigitus.emis.utils.decodeJson
 import timber.log.Timber
 import java.sql.Date
 import javax.inject.Inject
@@ -51,7 +52,7 @@ class AnalyticsRepositoryImpl
             .byKey().eq("analytics")
             .one().blockingGet()
 
-        val settings = EMISConfig.translateFromJson<AnalyticSettings>(dataStore?.value())
+        val settings = EMISConfig.translateFromJson<AnalyticSettings>(decodeJson(dataStore?.value()))
             ?.tei?.find { it.program == program }
 
         return settings

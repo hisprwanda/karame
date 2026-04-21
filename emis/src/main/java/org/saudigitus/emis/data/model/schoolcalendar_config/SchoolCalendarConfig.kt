@@ -1,15 +1,15 @@
 package org.saudigitus.emis.data.model.schoolcalendar_config
 
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class SchoolCalendarConfig(
-    @JsonProperty("academicYear")
+    @SerializedName("academicYear")
     val academicYear: String?,
-    @JsonProperty("defaults")
+    @SerializedName("defaults")
     val defaults: Defaults?,
-    @JsonProperty("schoolCalendar")
+    @SerializedName("schoolCalendar")
     val schoolCalendar: List<SchoolCalendar?>?
 )

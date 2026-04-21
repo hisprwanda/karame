@@ -25,10 +25,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dhis2.commons.ui.model.ListCardUiModel
 import org.hisp.dhis.android.core.common.ValueType
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
+import org.hisp.dhis.mobile.ui.designsystem.component.ListCardDescriptionModel
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
 import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicator
 import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicatorType
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
@@ -93,15 +97,31 @@ fun AttendanceOptionContainer(
             contentAlignment = Alignment.CenterEnd,
         ) {
             ListCard(
-                modifier = Modifier.testTag("TEI_ITEM"),
-                listAvatar = card.avatar,
-                title = ListCardTitleModel(text = card.title),
-                additionalInfoList = card.additionalInfo,
-                actionButton = card.actionButton,
-                expandLabelText = card.expandLabelText,
-                shrinkLabelText = card.shrinkLabelText,
+                modifier = Modifier.fillMaxWidth(),
+                listCardState = rememberListCardState(
+                    title = ListCardTitleModel(
+                        text = card.title,
+                        allowOverflow = false
+                    ),
+                    description = card.description?.let {
+                        ListCardDescriptionModel(
+                            text = it,
+                        )
+                    },
+                    lastUpdated = card.lastUpdated,
+                    additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                        additionalInfoList = card.additionalInfo,
+                        syncProgressItem = AdditionalInfoItem(
+                            key = stringResource(id = R.string.syncing),
+                            value = "",
+                        ),
+                        expandLabelText = stringResource(id = R.string.show_more),
+                        shrinkLabelText = stringResource(id = R.string.show_less),
+                        scrollableContent = true,
+                    ),
+                ),
                 onCardClick = card.onCardCLick,
-                shadow = false,
+                listAvatar = card.avatar, actionButton = card.actionButton,
             )
 
             if (attendanceStep == ButtonStep.EDITING) {

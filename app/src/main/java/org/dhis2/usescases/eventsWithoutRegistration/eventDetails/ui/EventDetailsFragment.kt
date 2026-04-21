@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.compose.collectAsLazyPagingItems
 import org.dhis2.R
 import org.dhis2.commons.Constants.ENROLLMENT_STATUS
 import org.dhis2.commons.Constants.ENROLLMENT_UID
@@ -26,13 +28,17 @@ import org.dhis2.commons.Constants.ORG_UNIT
 import org.dhis2.commons.Constants.PROGRAM_STAGE_UID
 import org.dhis2.commons.Constants.PROGRAM_UID
 import org.dhis2.commons.data.EventCreationType
-import org.dhis2.commons.dialogs.PeriodDialog
+import org.dhis2.commons.date.toUiStringResource
+import org.dhis2.commons.dialogs.AlertBottomDialog
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialog
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialogUiModel
 import org.dhis2.commons.locationprovider.LocationSettingLauncher
 import org.dhis2.commons.orgunitselector.OUTreeFragment
-import org.dhis2.commons.orgunitselector.OrgUnitSelectorScope
+import org.dhis2.commons.periods.ui.PeriodSelectorContent
 import org.dhis2.commons.resources.ResourceManager
 import org.dhis2.databinding.EventDetailsFragmentBinding
 import org.dhis2.maps.views.MapSelectorActivity
+import org.dhis2.mobile.commons.orgunit.OrgUnitSelectorScope
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.injection.EventDetailsComponentProvider
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.injection.EventDetailsModule
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.models.EventCatCombo
@@ -52,11 +58,10 @@ import org.dhis2.usescases.general.FragmentGlobalAbstract
 import org.hisp.dhis.android.core.common.FeatureType
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
 import org.hisp.dhis.android.core.period.PeriodType
-import java.util.Date
+import org.hisp.dhis.mobile.ui.designsystem.theme.Spacing
 import javax.inject.Inject
 
 class EventDetailsFragment : FragmentGlobalAbstract() {
-
     @Inject
     lateinit var factory: EventDetailsViewModelFactory
 
@@ -74,8 +79,7 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
 
     private val requestLocationByMap =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK && result.data?.extras != null
-            ) {
+            if (result.resultCode == Activity.RESULT_OK && result.data?.extras != null) {
                 val featureType: String =
                     result.data!!.getStringExtra(MapSelectorActivity.LOCATION_TYPE_EXTRA)!!
                 val coordinates = result.data?.getStringExtra(MapSelectorActivity.DATA_EXTRA)
@@ -107,30 +111,35 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        (requireActivity() as EventDetailsComponentProvider).provideEventDetailsComponent(
-            EventDetailsModule(
-                eventUid = requireArguments().getString(EVENT_UID),
-                context = requireContext(),
-                eventCreationType = getEventCreationType(
-                    requireArguments().getString(EVENT_CREATION_TYPE),
+        (requireActivity() as EventDetailsComponentProvider)
+            .provideEventDetailsComponent(
+                EventDetailsModule(
+                    eventUid = requireArguments().getString(EVENT_UID),
+                    context = requireContext(),
+                    eventCreationType =
+                        getEventCreationType(
+                            requireArguments().getString(EVENT_CREATION_TYPE),
+                        ),
+                    programStageUid = requireArguments().getString(PROGRAM_STAGE_UID),
+                    programUid = requireArguments().getString(PROGRAM_UID)!!,
+                    periodType =
+                        requireArguments()
+                            .getSerializable(EVENT_PERIOD_TYPE) as PeriodType?,
+                    enrollmentId = requireArguments().getString(ENROLLMENT_UID),
+                    scheduleInterval = requireArguments().getInt(EVENT_SCHEDULE_INTERVAL),
+                    initialOrgUnitUid = requireArguments().getString(ORG_UNIT),
+                    enrollmentStatus =
+                        requireArguments()
+                            .getSerializable(ENROLLMENT_STATUS) as EnrollmentStatus?,
                 ),
-                programStageUid = requireArguments().getString(PROGRAM_STAGE_UID),
-                programUid = requireArguments().getString(PROGRAM_UID)!!,
-                periodType = requireArguments()
-                    .getSerializable(EVENT_PERIOD_TYPE) as PeriodType?,
-                enrollmentId = requireArguments().getString(ENROLLMENT_UID),
-                scheduleInterval = requireArguments().getInt(EVENT_SCHEDULE_INTERVAL),
-                initialOrgUnitUid = requireArguments().getString(ORG_UNIT),
-                enrollmentStatus = requireArguments()
-                    .getSerializable(ENROLLMENT_STATUS) as EnrollmentStatus?,
-            ),
-        )?.inject(this)
-        binding = DataBindingUtil.inflate(
-            inflater,
-            R.layout.event_details_fragment,
-            container,
-            false,
-        )
+            )?.inject(this)
+        binding =
+            DataBindingUtil.inflate(
+                inflater,
+                R.layout.event_details_fragment,
+                container,
+                false,
+            )
         binding.lifecycleOwner = viewLifecycleOwner
         binding.viewModel = viewModel
         binding.fieldsContainer.setContent {
@@ -151,7 +160,10 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         lifecycleScope.launchWhenStarted {
@@ -160,21 +172,18 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
             }
         }
 
-        viewModel.showPeriods = {
-            showPeriodDialog()
-        }
+        viewModel.showPeriods = ::showPeriodDialog
 
-        viewModel.showOrgUnits = {
-            showOrgUnitDialog()
-        }
+        viewModel.showOrgUnits = ::showOrgUnitDialog
 
-        viewModel.showNoOrgUnits = {
-            showNoOrgUnitsDialog()
-        }
+        viewModel.showNoOrgUnits = ::showNoOrgUnitsDialog
 
         viewModel.requestLocationPermissions = {
             requestLocationPermissions.launch(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                ),
             )
         }
 
@@ -183,7 +192,7 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
                 MapSelectorActivity.create(
                     activity = requireActivity(),
                     fieldUid = null,
-                    locationType = FeatureType.valueOfFeatureType(featureType),
+                    locationType = FeatureType.valueOfFeatureType(featureType)!!,
                     initialData = initCoordinate,
                     programUid = requireArguments().getString(PROGRAM_UID),
                 ),
@@ -228,7 +237,7 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
         catCombo: EventCatCombo,
         coordinates: EventCoordinates,
     ) {
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Spacing16)) {
             if (viewModel.getPeriodType() == null || (viewModel.getPeriodType() != null && viewModel.getPeriodType() == PeriodType.Daily)) {
                 ProvideInputDate(
                     EventInputDateUiModel(
@@ -250,16 +259,21 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
                 )
             } else {
                 ProvidePeriodSelector(
-                    uiModel = EventInputDateUiModel(
-                        eventDate = date,
-                        detailsEnabled = details.enabled,
-                        onDateClick = { showPeriodDialog() },
-                        onDateSelected = {},
-                        onClear = { viewModel.onClearEventReportDate() },
-                        required = true,
-                        showField = date.active,
-                        selectableDates = viewModel.getSelectableDates(date),
-                    ),
+                    uiModel =
+                        EventInputDateUiModel(
+                            eventDate = date,
+                            detailsEnabled = details.enabled,
+                            onDateClick = {
+                                viewModel.getPeriodType()?.let {
+                                    showPeriodDialog(it)
+                                }
+                            },
+                            onDateSelected = {},
+                            onClear = { viewModel.onClearEventReportDate() },
+                            required = true,
+                            showField = date.active,
+                            selectableDates = viewModel.getSelectableDates(date),
+                        ),
                     modifier = Modifier,
                 )
             }
@@ -278,24 +292,26 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
 
             if (!catCombo.isDefault && catCombo.categories.isNotEmpty()) {
                 catCombo.categories.forEach { category ->
+
                     ProvideCategorySelector(
-                        eventCatComboUiModel = EventCatComboUiModel(
-                            category = category,
-                            eventCatCombo = catCombo,
-                            detailsEnabled = details.enabled,
-                            currentDate = date.currentDate,
-                            selectedOrgUnit = details.selectedOrgUnit,
-                            onClearCatCombo = {
-                                viewModel.onClearCatCombo()
-                            },
-                            onOptionSelected = {
-                                val selectedOption = Pair(category.uid, it?.uid())
-                                viewModel.setUpCategoryCombo(selectedOption)
-                            },
-                            required = true,
-                            noOptionsText = getString(R.string.no_options),
-                            catComboText = getString(R.string.cat_combo),
-                        ),
+                        eventCatComboUiModel =
+                            EventCatComboUiModel(
+                                category = category,
+                                eventCatCombo = catCombo,
+                                detailsEnabled = details.enabled,
+                                currentDate = date.currentDate,
+                                selectedOrgUnit = details.selectedOrgUnit,
+                                onClearCatCombo = {
+                                    viewModel.onClearCatCombo()
+                                },
+                                onOptionSelected = {
+                                    val selectedOption = Pair(category.uid, it?.uid())
+                                    viewModel.setUpCategoryCombo(selectedOption)
+                                },
+                                required = true,
+                                noOptionsText = getString(R.string.no_options),
+                                catComboText = getString(R.string.cat_combo),
+                            ),
                     )
                 }
             } else if (!catCombo.isDefault) {
@@ -304,6 +320,7 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
                     option = getString(R.string.no_options),
                 )
             }
+
             ProvideCoordinates(
                 coordinates = coordinates,
                 detailsEnabled = details.enabled,
@@ -313,25 +330,42 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
         }
     }
 
-    private fun showPeriodDialog() {
-        PeriodDialog()
-            .setPeriod(viewModel.eventDate.value.periodType)
-            .setMinDate(viewModel.eventDate.value.minDate)
-            .setMaxDate(viewModel.eventDate.value.maxDate)
-            .setPossitiveListener { selectedDate: Date ->
-                viewModel.setUpEventReportDate(selectedDate)
-            }
-            .show(requireActivity().supportFragmentManager, PeriodDialog::class.java.simpleName)
+    private fun showPeriodDialog(periodType: PeriodType) {
+        BottomSheetDialog(
+            showTopDivider = true,
+            showBottomDivider = true,
+            bottomSheetDialogUiModel =
+                BottomSheetDialogUiModel(
+                    title = getString(periodType.toUiStringResource()),
+                    iconResource = -1,
+                ),
+            onSecondaryButtonClicked = {
+            },
+            onMainButtonClicked = { _ ->
+            },
+            content = { bottomSheetDialog, scrollState ->
+                val periods = viewModel.fetchPeriods().collectAsLazyPagingItems()
+                PeriodSelectorContent(
+                    periods = periods,
+                    scrollState = scrollState,
+                ) { period ->
+                    period.startDate.let { selectedDate ->
+                        viewModel.setUpEventReportDate(selectedDate)
+                    }
+                    bottomSheetDialog.dismiss()
+                }
+            },
+        ).show(childFragmentManager, AlertBottomDialog::class.java.simpleName)
     }
 
     private fun showOrgUnitDialog() {
-        OUTreeFragment.Builder()
+        OUTreeFragment
+            .Builder()
             .withPreselectedOrgUnits(
                 viewModel.eventOrgUnit.value.selectedOrgUnit
                     ?.let { listOf(it.uid()) }
                     ?: emptyList(),
-            )
-            .singleSelection()
+            ).singleSelection()
             .orgUnitScope(
                 when (getEventCreationType(requireArguments().getString(EVENT_CREATION_TYPE))) {
                     EventCreationType.REFERAL ->
@@ -347,11 +381,9 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
                             viewModel.eventOrgUnit.value.programUid!!,
                         )
                 },
-            )
-            .onSelection { selectedOrgUnits ->
+            ).onSelection { selectedOrgUnits ->
                 viewModel.setUpOrgUnit(selectedOrgUnit = selectedOrgUnits.firstOrNull()?.uid())
-            }
-            .build()
+            }.build()
             .show(childFragmentManager, "ORG_UNIT_DIALOG")
     }
 
@@ -359,9 +391,8 @@ class EventDetailsFragment : FragmentGlobalAbstract() {
         showInfoDialog(getString(R.string.error), getString(R.string.no_org_units))
     }
 
-    private fun getEventCreationType(typeString: String?): EventCreationType {
-        return typeString?.let {
+    private fun getEventCreationType(typeString: String?): EventCreationType =
+        typeString?.let {
             EventCreationType.valueOf(it)
         } ?: EventCreationType.DEFAULT
-    }
 }

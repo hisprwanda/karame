@@ -6,15 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.Surface
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.databinding.DataBindingUtil
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
-import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.internal.lifecycle.HiltViewModelFactory
 import dhis2.org.analytics.charts.extensions.isNotCurrent
+import dhis2.org.analytics.charts.idling.AnalyticsCountingIdlingResource
 import dhis2.org.analytics.charts.ui.AnalyticsAdapter
 import dhis2.org.analytics.charts.ui.AnalyticsModel
 import dhis2.org.analytics.charts.ui.ChartModel
@@ -34,8 +32,9 @@ import javax.inject.Inject
 
 const val VISUALIZATION_TYPE = "VISUALIZATION_TYPE"
 
-class IndicatorsFragment : FragmentGlobalAbstract(), IndicatorsView {
-
+class IndicatorsFragment :
+    FragmentGlobalAbstract(),
+    IndicatorsView {
     @Inject
     lateinit var presenter: IndicatorsPresenter
 
@@ -50,10 +49,11 @@ class IndicatorsFragment : FragmentGlobalAbstract(), IndicatorsView {
     private lateinit var binding: FragmentIndicatorsBinding
     private val adapter: AnalyticsAdapter by lazy {
         AnalyticsAdapter().apply {
-            onRelativePeriodCallback = { chartModel: ChartModel,
-                                         relativePeriod: RelativePeriod?,
-                                         current: RelativePeriod?,
-                                         lineListingColumnId: Int?,
+            onRelativePeriodCallback = {
+                chartModel: ChartModel,
+                relativePeriod: RelativePeriod?,
+                current: RelativePeriod?,
+                lineListingColumnId: Int?,
                 ->
                 relativePeriod?.let {
                     if (it.isNotCurrent()) {
@@ -69,22 +69,25 @@ class IndicatorsFragment : FragmentGlobalAbstract(), IndicatorsView {
                 }
             }
             onOrgUnitCallback =
-                { chartModel: ChartModel,
-                  orgUnitFilterType: OrgUnitFilterType,
-                  lineListingColumnId: Int?,
+                {
+                    chartModel: ChartModel,
+                    orgUnitFilterType: OrgUnitFilterType,
+                    lineListingColumnId: Int?,
                     ->
                     when (orgUnitFilterType) {
-                        OrgUnitFilterType.SELECTION -> showOUTreeSelector(
-                            chartModel,
-                            lineListingColumnId,
-                        )
+                        OrgUnitFilterType.SELECTION ->
+                            showOUTreeSelector(
+                                chartModel,
+                                lineListingColumnId,
+                            )
 
-                        else -> presenter.filterByOrgUnit(
-                            chartModel,
-                            emptyList(),
-                            orgUnitFilterType,
-                            lineListingColumnId,
-                        )
+                        else ->
+                            presenter.filterByOrgUnit(
+                                chartModel,
+                                emptyList(),
+                                orgUnitFilterType,
+                                lineListingColumnId,
+                            )
                     }
                 }
             onResetFilterCallback = { chartModel, filterType ->
@@ -93,6 +96,7 @@ class IndicatorsFragment : FragmentGlobalAbstract(), IndicatorsView {
         }
     }
     private val indicatorInjector by lazy { IndicatorInjector(this) }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         indicatorInjector.inject(context)
@@ -103,12 +107,13 @@ class IndicatorsFragment : FragmentGlobalAbstract(), IndicatorsView {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        binding = DataBindingUtil.inflate(
-            inflater,
-            R.layout.fragment_indicators,
-            container,
-            false,
-        )
+        binding =
+            DataBindingUtil.inflate(
+                inflater,
+                R.layout.fragment_indicators,
+                container,
+                false,
+            )
         binding.indicatorsRecycler.adapter = adapter
         return if (programValidator.isSEMIS(arguments?.getString(Constants.ANALYTICS_PROGRAM).orEmpty())) {
             ComposeView(requireContext()).apply {
@@ -157,13 +162,17 @@ class IndicatorsFragment : FragmentGlobalAbstract(), IndicatorsView {
     }
 
     override fun swapAnalytics(analytics: List<AnalyticsModel>) {
-        adapter.submitList(analytics)
-        binding.spinner.visibility = View.GONE
+        try {
+            adapter.submitList(analytics)
+            binding.spinner.visibility = View.GONE
 
-        if (analytics.isNotEmpty()) {
-            binding.emptyIndicators.visibility = View.GONE
-        } else {
-            binding.emptyIndicators.visibility = View.VISIBLE
+            if (analytics.isNotEmpty()) {
+                binding.emptyIndicators.visibility = View.GONE
+            } else {
+                binding.emptyIndicators.visibility = View.VISIBLE
+            }
+        } finally {
+            AnalyticsCountingIdlingResource.decrement()
         }
     }
 
@@ -180,32 +189,35 @@ class IndicatorsFragment : FragmentGlobalAbstract(), IndicatorsView {
             .setNegativeButton(getString(dhis2.org.R.string.no)) {
                 relativePeriod?.let { periodList.add(relativePeriod) }
                 presenter.filterByPeriod(chartModel, periodList, lineListingColumnId)
-            }
-            .setPositiveButton(getString(dhis2.org.R.string.yes)) {
+            }.setPositiveButton(getString(dhis2.org.R.string.yes)) {
                 relativePeriod?.let { periodList.add(relativePeriod) }
                 current?.let { periodList.add(current) }
                 presenter.filterByPeriod(chartModel, periodList, lineListingColumnId)
-            }
-            .show(parentFragmentManager, AlertBottomDialog::class.java.simpleName)
+            }.show(parentFragmentManager, AlertBottomDialog::class.java.simpleName)
     }
 
     private fun showOUTreeSelector(
         chartModel: ChartModel,
         lineListingColumnId: Int?,
     ) {
-        OUTreeFragment.Builder()
+        OUTreeFragment
+            .Builder()
             .withPreselectedOrgUnits(
                 chartModel.graph.orgUnitsSelected(lineListingColumnId).toMutableList(),
-            )
-            .onSelection { selectedOrgUnits ->
+            ).onSelection { selectedOrgUnits ->
                 presenter.filterByOrgUnit(
                     chartModel,
                     selectedOrgUnits,
                     OrgUnitFilterType.SELECTION,
                     lineListingColumnId,
                 )
-            }
-            .build()
+            }.build()
             .show(childFragmentManager, "OUTreeFragment")
+    }
+
+    override fun onDestroyView() {
+        AnalyticsCountingIdlingResource.decrement()
+        presenter.onDettach()
+        super.onDestroyView()
     }
 }

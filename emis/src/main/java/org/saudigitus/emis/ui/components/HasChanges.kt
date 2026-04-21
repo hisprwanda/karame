@@ -2,9 +2,9 @@ package org.saudigitus.emis.ui.components
 
 import androidx.fragment.app.FragmentManager
 import org.dhis2.commons.R
-import org.dhis2.ui.dialogs.bottomsheet.BottomSheetDialog
-import org.dhis2.ui.dialogs.bottomsheet.BottomSheetDialogUiModel
-import org.dhis2.ui.dialogs.bottomsheet.DialogButtonStyle
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialog
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialogUiModel
+import org.dhis2.commons.dialogs.bottomsheet.DialogButtonStyle
 
 fun launchBottomSheet(
     title: String,
@@ -18,7 +18,7 @@ fun launchBottomSheet(
             title = title,
             message = subtitle,
             iconResource = R.drawable.ic_outline_error_36,
-            mainButton = DialogButtonStyle.MainButton(org.dhis2.commons.R.string.keep_editing),
+            mainButton = DialogButtonStyle.MainButton(R.string.keep_editing),
             secondaryButton = DialogButtonStyle.DiscardButton(),
         ),
         onMainButtonClicked = {

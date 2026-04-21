@@ -10,7 +10,11 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import dhis2.org.analytics.charts.ui.GroupAnalyticsFragment
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.dhis2.R
+import org.dhis2.commons.viewmodel.DispatcherProvider
 import org.dhis2.usescases.about.AboutFragment
 import org.dhis2.usescases.main.program.ProgramFragment
 import org.dhis2.usescases.qrReader.QrReaderFragment
@@ -18,6 +22,7 @@ import org.dhis2.usescases.settings.SyncManagerFragment
 import org.dhis2.usescases.troubleshooting.TroubleshootingFragment
 
 class MainNavigator(
+    private val dispatcherProvider: DispatcherProvider,
     private val fragmentManager: FragmentManager,
     private val onTransitionStart: () -> Unit,
     private val onScreenChanged: (
@@ -26,7 +31,10 @@ class MainNavigator(
         showBottomNavigation: Boolean,
     ) -> Unit,
 ) {
-    enum class MainScreen(@StringRes val title: Int, @IdRes val navViewId: Int) {
+    enum class MainScreen(
+        @StringRes val title: Int,
+        @IdRes val navViewId: Int,
+    ) {
         PROGRAMS(R.string.done_task, R.id.menu_home),
         VISUALIZATIONS(R.string.done_task, R.id.menu_home),
         QR(R.string.QR_SCANNER, R.id.qr_scan),
@@ -45,14 +53,11 @@ class MainNavigator(
 
     fun isVisualizations(): Boolean = currentScreen.value == MainScreen.VISUALIZATIONS
 
-    fun getCurrentIfProgram(): ProgramFragment? {
-        return currentFragment?.takeIf { it is ProgramFragment } as ProgramFragment
-    }
+    fun getCurrentIfProgram(): ProgramFragment? = currentFragment?.takeIf { it is ProgramFragment } as? ProgramFragment
 
     fun currentScreenName() = currentScreen.value?.name
 
-    fun currentNavigationViewItemId(screenName: String): Int =
-        MainScreen.valueOf(screenName).navViewId
+    fun currentNavigationViewItemId(screenName: String): Int = MainScreen.valueOf(screenName).navViewId
 
     fun openHome() {
         when {
@@ -63,11 +68,12 @@ class MainNavigator(
 
     fun openPrograms() {
         val programFragment = ProgramFragment()
-        val sharedView = if (isVisualizations()) {
-            (currentFragment as GroupAnalyticsFragment).sharedView()
-        } else {
-            null
-        }
+        val sharedView =
+            if (isVisualizations()) {
+                (currentFragment as GroupAnalyticsFragment).sharedView()
+            } else {
+                null
+            }
         if (sharedView != null) {
             programFragment.sharedElementEnterTransition = ChangeBounds()
             programFragment.sharedElementReturnTransition = ChangeBounds()
@@ -79,7 +85,10 @@ class MainNavigator(
         )
     }
 
-    fun restoreScreen(screenToRestoreName: String, languageSelectorOpened: Boolean = false) {
+    fun restoreScreen(
+        screenToRestoreName: String,
+        languageSelectorOpened: Boolean = false,
+    ) {
         when (MainScreen.valueOf(screenToRestoreName)) {
             MainScreen.PROGRAMS -> openPrograms()
             MainScreen.VISUALIZATIONS -> openVisualizations()
@@ -133,38 +142,48 @@ class MainNavigator(
             onTransitionStart()
             currentScreen.value = screen
             currentFragment = fragment
-            val transaction: FragmentTransaction = fragmentManager.beginTransaction()
-            transaction.apply {
-                if (sharedView == null) {
-                    val (enterAnimation, exitAnimation) = if (useFadeInTransition) {
-                        Pair(android.R.anim.fade_in, android.R.anim.fade_out)
-                    } else {
-                        Pair(R.anim.fragment_enter_right, R.anim.fragment_exit_left)
-                    }
-                    val (enterPopAnimation, exitPopAnimation) = if (useFadeInTransition) {
-                        Pair(android.R.anim.fade_in, android.R.anim.fade_out)
-                    } else {
-                        Pair(R.anim.fragment_enter_left, R.anim.fragment_exit_right)
-                    }
-                    setCustomAnimations(
-                        enterAnimation,
-                        exitAnimation,
-                        enterPopAnimation,
-                        exitPopAnimation,
-                    )
-                } else {
-                    setReorderingAllowed(true)
-                    addSharedElement(sharedView, "contenttest")
-                }
-            }
-                .replace(R.id.fragment_container, fragment, fragment::class.simpleName)
-                .commitAllowingStateLoss()
 
-            onScreenChanged(
-                screen.title,
-                isPrograms(),
-                isHome(),
-            )
+            CoroutineScope(dispatcherProvider.ui()).launch {
+                withContext(dispatcherProvider.io()) {
+                    val transaction: FragmentTransaction = fragmentManager.beginTransaction()
+                    transaction
+                        .apply {
+                            if (sharedView == null) {
+                                val (enterAnimation, exitAnimation) = getEnterExitAnimation(useFadeInTransition)
+                                val (enterPopAnimation, exitPopAnimation) = getEnterExitPopAnimation(useFadeInTransition)
+                                setCustomAnimations(
+                                    enterAnimation,
+                                    exitAnimation,
+                                    enterPopAnimation,
+                                    exitPopAnimation,
+                                )
+                            } else {
+                                setReorderingAllowed(true)
+                                addSharedElement(sharedView, "contenttest")
+                            }
+                        }.replace(R.id.fragment_container, fragment, fragment::class.simpleName)
+                        .commitAllowingStateLoss()
+                }
+                onScreenChanged(
+                    screen.title,
+                    isPrograms(),
+                    isHome(),
+                )
+            }
         }
     }
+
+    private fun getEnterExitPopAnimation(useFadeInTransition: Boolean): Pair<Int, Int> =
+        if (useFadeInTransition) {
+            Pair(android.R.anim.fade_in, android.R.anim.fade_out)
+        } else {
+            Pair(R.anim.fragment_enter_left, R.anim.fragment_exit_right)
+        }
+
+    private fun getEnterExitAnimation(useFadeInTransition: Boolean): Pair<Int, Int> =
+        if (useFadeInTransition) {
+            Pair(android.R.anim.fade_in, android.R.anim.fade_out)
+        } else {
+            Pair(R.anim.fragment_enter_right, R.anim.fragment_exit_left)
+        }
 }

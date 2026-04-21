@@ -1,8 +1,8 @@
 package org.saudigitus.emis.data.model
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class Auth(
     val baseUrl: String?,
     val endpoint: String?,

@@ -1,8 +1,8 @@
 package org.saudigitus.emis.data.model.app_config
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class TransferEvent(
     val program: String?,
     val academicYear: String?,

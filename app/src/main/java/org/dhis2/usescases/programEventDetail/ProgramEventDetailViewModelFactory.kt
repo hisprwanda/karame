@@ -8,7 +8,6 @@ import org.dhis2.maps.usecases.MapStyleConfiguration
 import org.dhis2.tracker.events.CreateEventUseCase
 import org.dhis2.utils.customviews.navigationbar.NavigationPageConfigurator
 
-@Suppress("UNCHECKED_CAST")
 class ProgramEventDetailViewModelFactory(
     private val mapStyleConfiguration: MapStyleConfiguration,
     private val eventRepository: ProgramEventDetailRepository,
@@ -16,10 +15,9 @@ class ProgramEventDetailViewModelFactory(
     private val createEventUseCase: CreateEventUseCase,
     private val pageConfigurator: NavigationPageConfigurator,
     private val resourceManager: ResourceManager,
-) :
-    ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return ProgramEventDetailViewModel(
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+        ProgramEventDetailViewModel(
             mapStyleConfiguration,
             eventRepository,
             dispatcher,
@@ -27,5 +25,4 @@ class ProgramEventDetailViewModelFactory(
             pageConfigurator,
             resourceManager,
         ) as T
-    }
 }

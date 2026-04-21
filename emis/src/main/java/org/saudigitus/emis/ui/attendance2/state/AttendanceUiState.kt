@@ -15,17 +15,9 @@ import org.saudigitus.emis.utils.DateHelper
 
 sealed class AttendanceUiState(
     open val toolbarHeaders: ToolbarHeaders,
-    open val infoCard: InfoCard
+    open val infoCard: InfoCard,
+    open val students: List<SearchTeiModel> = emptyList(),
 ) {
-    object IDLE : AttendanceUiState(
-        ToolbarHeaders(
-            title = "Attendance",
-            subtitle = DateHelper.formatDateWithWeekDay(
-                DateHelper.formatDate(System.currentTimeMillis()).orEmpty()
-            )
-        ),
-        InfoCard(displayBoolean = false)
-    )
     object LOADING : AttendanceUiState(
         ToolbarHeaders(
             title = "Attendance",
@@ -33,14 +25,15 @@ sealed class AttendanceUiState(
                 DateHelper.formatDate(System.currentTimeMillis()).orEmpty()
             )
         ),
-        InfoCard(displayBoolean = false)
+        InfoCard(displayBoolean = false),
+        emptyList()
     )
 
     data class HasAttendance(
         override val toolbarHeaders: ToolbarHeaders,
         override val infoCard: InfoCard,
+        override val students: List<SearchTeiModel> = emptyList(),
         val program: String = "",
-        val students: List<SearchTeiModel> = emptyList(),
         val attendanceButtonState: AttendanceButtonState = AttendanceButtonState(),
         val fields: List<FormFieldState> = emptyList(),
         val fieldsData: List<FormFieldData> = emptyList(),
@@ -56,6 +49,6 @@ sealed class AttendanceUiState(
         val displayBulk: Boolean = false,
         val displaySummary: Boolean = false,
         val execSync: Boolean = false,
-    ) : AttendanceUiState(toolbarHeaders, infoCard) {
+    ) : AttendanceUiState(toolbarHeaders, infoCard, students) {
     }
 }

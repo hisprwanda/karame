@@ -2,6 +2,7 @@ package org.dhis2.usescases.searchTrackEntity.ui.mapper
 
 import android.content.Context
 import org.dhis2.R
+import org.dhis2.commons.date.DateUtils
 import org.dhis2.commons.date.toDateSpan
 import org.dhis2.commons.date.toOverdueOrScheduledUiText
 import org.dhis2.commons.resources.ResourceManager
@@ -19,13 +20,12 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import java.util.Calendar
 import java.util.Date
 
 class TEICardMapperTest {
-
     private val context: Context = mock()
     private val resourceManager: ResourceManager = mock()
-    private val currentDate = Date()
 
     private lateinit var mapper: TEICardMapper
 
@@ -49,14 +49,15 @@ class TEICardMapperTest {
 
     @Test
     fun shouldReturnCardFull() {
-        val model = createFakeModel()
+        val model = createFakeModel(isOverdue = true)
 
-        val result = mapper.map(
-            searchTEIModel = model,
-            onSyncIconClick = {},
-            onCardClick = {},
-            onImageClick = {},
-        )
+        val result =
+            mapper.map(
+                searchTEIModel = model,
+                onSyncIconClick = {},
+                onCardClick = {},
+                onImageClick = {},
+            )
 
         assertEquals(result.title, model.header)
         assertEquals(result.lastUpdated, model.tei.lastUpdated().toDateSpan(context))
@@ -81,55 +82,89 @@ class TEICardMapperTest {
         )
     }
 
-    private fun createFakeModel(): SearchTeiModel {
+    @Test
+    fun shouldShowOverDueLabel() {
+        val overdueDate = DateUtils.getInstance().calendar
+        overdueDate.add(Calendar.DATE, -2)
+
+        whenever(resourceManager.getPlural(any(), any(), any())) doReturn "2 days"
+
+        val model = createFakeModel(overdueDate.time, true)
+
+        val result =
+            mapper.map(
+                searchTEIModel = model,
+                onSyncIconClick = {},
+                onCardClick = {},
+                onImageClick = {},
+            )
+        assertEquals(
+            result.additionalInfo[4].value,
+            model.overdueDate.toOverdueOrScheduledUiText(resourceManager),
+        )
+    }
+
+    private fun createFakeModel(
+        currentDate: Date = Date(),
+        isOverdue: Boolean = false,
+    ): SearchTeiModel {
         val attributeValues = LinkedHashMap<String, TrackedEntityAttributeValue>()
-        attributeValues["Name"] = TrackedEntityAttributeValue.builder()
-            .value("Peter")
-            .build()
-
-        val model = SearchTeiModel().apply {
-            header = "TEI header"
-            tei = TrackedEntityInstance.builder()
-                .uid("TEIUid")
-                .lastUpdated(currentDate)
-                .organisationUnit("OrgUnit")
-                .aggregatedSyncState(State.SYNCED)
+        attributeValues["Name"] =
+            TrackedEntityAttributeValue
+                .builder()
+                .value("Peter")
                 .build()
-            enrolledOrgUnit = "OrgUnit"
-            displayOrgUnit = true
-            setCurrentEnrollment(
-                Enrollment.builder()
-                    .uid("EnrollmentUid")
-                    .program("programUid")
-                    .status(EnrollmentStatus.COMPLETED)
-                    .build(),
-            )
-            setAttributeValues(attributeValues)
 
-            addProgramInfo(
-                Program.builder()
-                    .uid("Program1Uid")
-                    .displayName("Program 1")
-                    .build(),
-                null,
-            )
-            addProgramInfo(
-                Program.builder()
-                    .uid("Program2Uid")
-                    .displayName("Program 2")
-                    .build(),
-                null,
-            )
-            overdueDate = currentDate
-            isHasOverdue = true
+        val model =
+            SearchTeiModel().apply {
+                header = "TEI header"
+                tei =
+                    TrackedEntityInstance
+                        .builder()
+                        .uid("TEIUid")
+                        .lastUpdated(currentDate)
+                        .organisationUnit("OrgUnit")
+                        .aggregatedSyncState(State.SYNCED)
+                        .build()
+                enrolledOrgUnit = "OrgUnit"
+                displayOrgUnit = true
+                setCurrentEnrollment(
+                    Enrollment
+                        .builder()
+                        .uid("EnrollmentUid")
+                        .program("programUid")
+                        .status(EnrollmentStatus.COMPLETED)
+                        .build(),
+                )
+                setAttributeValues(attributeValues)
 
-            addEnrollment(
-                Enrollment.builder()
-                    .uid("EnrollmentUid")
-                    .followUp(true)
-                    .build(),
-            )
-        }
+                addProgramInfo(
+                    Program
+                        .builder()
+                        .uid("Program1Uid")
+                        .displayName("Program 1")
+                        .build(),
+                    null,
+                )
+                addProgramInfo(
+                    Program
+                        .builder()
+                        .uid("Program2Uid")
+                        .displayName("Program 2")
+                        .build(),
+                    null,
+                )
+                overdueDate = currentDate
+                isHasOverdue = isOverdue
+
+                addEnrollment(
+                    Enrollment
+                        .builder()
+                        .uid("EnrollmentUid")
+                        .followUp(true)
+                        .build(),
+                )
+            }
         return model
     }
 }

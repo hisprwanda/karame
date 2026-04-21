@@ -38,6 +38,7 @@ import org.saudigitus.emis.utils.Transformations
 import org.saudigitus.emis.utils.Utils
 import org.saudigitus.emis.utils.Utils.getAttendanceStatusColor
 import org.saudigitus.emis.utils.Utils.mapToType
+import org.saudigitus.emis.utils.decodeJson
 import org.saudigitus.emis.utils.eventsWithTrackedDataValues
 import org.saudigitus.emis.utils.optionByOptionSet
 import org.saudigitus.emis.utils.optionsByOptionSetAndCode
@@ -160,7 +161,7 @@ class DataManagerImpl
                 .byKey().eq(id)
                 .one().blockingGet()
 
-            return@withContext EMISConfig.fromJson(dataStore?.value())
+            return@withContext EMISConfig.fromJson(decodeJson(dataStore?.value()))
         }
 
     override suspend fun getTrackedEntityType(program: String) = withContext(Dispatchers.IO) {
@@ -259,7 +260,7 @@ class DataManagerImpl
                     .byKey().eq("transfers")
                     .one().blockingGet()
 
-                val transferred = EMISConfig.translateFromJson<TransferEvent>(dataStore?.value())
+                val transferred = EMISConfig.translateFromJson<TransferEvent>(decodeJson(dataStore?.value()))
                     ?: return@withContext emptyList()
 
                 val requiredDataElements = listOfNotNull(
@@ -453,53 +454,7 @@ class DataManagerImpl
 
         val data = mutableMapOf<SearchTeiModel, AttendanceEntity>()
 
-        return@withContext try {
-            val cursor = d2.databaseAdapter().rawQuery(
-                SqlRaw.geTeiByAttendanceStatusQuery(
-                    ou,
-                    program,
-                    stage,
-                    attendanceStage,
-                    attendanceStatus,
-                    attendanceDataElement,
-                    reasonDataElement,
-                    date,
-                    dataElementIds,
-                    options,
-                ),
-            )
-
-            if (cursor.count > 0) {
-                cursor.moveToFirst()
-
-                do {
-                    if (!cursor.isNull(0) &&
-                        !cursor.isNull(1) && !cursor.isNull(2)
-                    ) {
-                        val response = async {
-                            transformations.teiEventTransform(
-                                teiUid = cursor.getString(1),
-                                eventUid = cursor.getString(0),
-                                program = program,
-                                attendanceDataElement = attendanceDataElement,
-                                reasonDataElement = reasonDataElement,
-                                config = config,
-                            )
-                        }
-
-                        val result = response.await()
-
-                        data[result.first] = result.second
-                    }
-                } while (cursor.moveToNext())
-
-                data
-            } else {
-                emptyMap()
-            }
-        } catch (_: Exception) {
-            emptyMap()
-        }
+        return@withContext data
     }
 
     override suspend fun dateValidation(id: String): SchoolCalendarConfig? =
@@ -511,7 +466,7 @@ class DataManagerImpl
                     .byKey().eq(id)
                     .one().blockingGet()
 
-                EMISConfig.translateFromJson<SchoolCalendarConfig>(dataStore?.value())
+                EMISConfig.translateFromJson<SchoolCalendarConfig>(decodeJson(dataStore?.value()))
             } catch (_: Exception) {
                 null
             }

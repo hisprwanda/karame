@@ -10,12 +10,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.BackdropScaffoldState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -34,6 +34,7 @@ import org.dhis2.android.rtsm.R
 import org.dhis2.android.rtsm.data.TransactionType
 import org.dhis2.android.rtsm.utils.Utils.Companion.capitalizeText
 import org.hisp.dhis.mobile.ui.designsystem.component.IconButton
+import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -59,10 +60,12 @@ fun Toolbar(
                 horizontalAlignment = Alignment.Start,
             ) {
                 Text(
-                    text = capitalizeText(title).ifBlank {
-                        stringResource(R.string.title_activity_home)
-                    },
-                    style = MaterialTheme.typography.subtitle1,
+                    text =
+                        capitalizeText(title).ifBlank {
+                            stringResource(R.string.title_activity_home)
+                        },
+                    color = SurfaceColor.SurfaceBright,
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     fontSize = 17.sp,
                     lineHeight = 24.sp,
@@ -73,7 +76,7 @@ fun Toolbar(
                 ) {
                     Text(
                         text = from,
-                        style = MaterialTheme.typography.subtitle2,
+                        style = MaterialTheme.typography.titleSmall,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1,
                         fontSize = 12.sp,
@@ -141,7 +144,12 @@ fun Toolbar(
 }
 
 @Composable
-fun ColumnScope.ProvideToolBarIcons(to: String?, hasFacilitySelected: Boolean, hasDestinationSelected: Boolean?, title: String) {
+fun ColumnScope.ProvideToolBarIcons(
+    to: String?,
+    hasFacilitySelected: Boolean,
+    hasDestinationSelected: Boolean?,
+    title: String,
+) {
     if (to != null) {
         Icon(
             painter = painterResource(id = R.drawable.ic_from_to),
@@ -153,7 +161,7 @@ fun ColumnScope.ProvideToolBarIcons(to: String?, hasFacilitySelected: Boolean, h
         )
         Text(
             text = to,
-            style = MaterialTheme.typography.subtitle2,
+            style = MaterialTheme.typography.titleSmall,
             overflow = TextOverflow.Ellipsis,
             maxLines = 1,
             fontSize = 12.sp,
@@ -190,10 +198,11 @@ fun AnalyticsTopBar(
                 horizontalAlignment = Alignment.Start,
             ) {
                 Text(
-                    text = capitalizeText(title).ifBlank {
-                        stringResource(R.string.title_activity_home)
-                    },
-                    style = MaterialTheme.typography.subtitle1,
+                    text =
+                        capitalizeText(title).ifBlank {
+                            stringResource(R.string.title_activity_home)
+                        },
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     fontSize = 17.sp,
                     lineHeight = 24.sp,

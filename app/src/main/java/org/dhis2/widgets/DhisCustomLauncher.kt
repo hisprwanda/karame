@@ -12,7 +12,6 @@ import org.dhis2.bindings.app
 import org.dhis2.usescases.splash.SplashActivity
 
 class DhisCustomLauncher : AppWidgetProvider() {
-
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -21,7 +20,7 @@ class DhisCustomLauncher : AppWidgetProvider() {
         val remoteViews = RemoteViews(context.packageName, R.layout.dhis_custom_launcher)
         val configIntent = Intent(context, SplashActivity::class.java)
 
-        val configPendingIntent = PendingIntent.getActivity(context, 0, configIntent, 0)
+        val configPendingIntent = PendingIntent.getActivity(context, 0, configIntent, PendingIntent.FLAG_IMMUTABLE)
 
         remoteViews.setOnClickPendingIntent(R.id.appwidget_image, configPendingIntent)
         appWidgetManager.updateAppWidget(appWidgetIds, remoteViews)
@@ -41,7 +40,6 @@ class DhisCustomLauncher : AppWidgetProvider() {
     }
 
     companion object {
-
         internal fun updateAppWidget(
             context: Context,
             appWidgetManager: AppWidgetManager,
@@ -49,14 +47,25 @@ class DhisCustomLauncher : AppWidgetProvider() {
         ) {
             var widgetImage = ""
             if (context.app().serverComponent != null) {
-                val d2 = context.app().serverComponent?.userManager()?.d2
+                val d2 =
+                    context
+                        .app()
+                        .serverComponent
+                        ?.userManager()
+                        ?.d2
                 if (d2 != null) {
                     val isLoggedIn = d2.userModule().isLogged().blockingGet()
-                    widgetImage = if (isLoggedIn) {
-                        d2.settingModule()?.systemSetting()?.flag()?.blockingGet()?.value() ?: ""
-                    } else {
-                        ""
-                    }
+                    widgetImage =
+                        if (isLoggedIn) {
+                            d2
+                                .settingModule()
+                                ?.systemSetting()
+                                ?.flag()
+                                ?.blockingGet()
+                                ?.value() ?: ""
+                        } else {
+                            ""
+                        }
                 }
             }
 
@@ -80,7 +89,7 @@ class DhisCustomLauncher : AppWidgetProvider() {
 
         private fun getPendingIntent(context: Context): PendingIntent {
             val intent = Intent(context, SplashActivity::class.java)
-            return PendingIntent.getActivity(context, 0, intent, 0)
+            return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
         }
     }
 }

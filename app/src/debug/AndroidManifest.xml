@@ -12,11 +12,12 @@
         android:required="false" />
 
     <application
+        android:allowBackup="false"
+        android:fullBackupContent="@xml/old_backup_config"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@drawable/emis_logo">
 
         <activity android:name=".usescases.development.DevelopmentActivity" />
-
-        <service android:name="com.facebook.flipper.plugins.leakcanary.RecordLeakService" />
 
     </application>
 

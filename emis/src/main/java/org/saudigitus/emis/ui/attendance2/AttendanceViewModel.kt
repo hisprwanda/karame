@@ -3,7 +3,6 @@ package org.saudigitus.emis.ui.attendance2
 import androidx.compose.ui.util.fastFilterNotNull
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +37,6 @@ import org.saudigitus.emis.utils.getOption
 import java.time.ZoneId
 import javax.inject.Inject
 
-@HiltViewModel
 class AttendanceViewModel @Inject constructor(
     private val repository: DataManager,
     private val attendanceRepository: AttendanceRepository,

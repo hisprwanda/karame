@@ -2,7 +2,6 @@ package org.saudigitus.emis.ui.performance
 
 import android.util.Log
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,7 +26,6 @@ import org.saudigitus.emis.ui.form.Field
 import org.saudigitus.emis.utils.DateHelper
 import javax.inject.Inject
 
-@HiltViewModel
 class PerformanceViewModel
 @Inject constructor(
     private val repository: DataManager,

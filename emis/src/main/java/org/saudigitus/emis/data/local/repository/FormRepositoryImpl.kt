@@ -113,12 +113,14 @@ class FormRepositoryImpl
             .byDataElement().eq(dl)
             .blockingGet()
             .map { stageDls ->
+                val dataElement = d2.dataElement(stageDls.dataElement()?.uid().orEmpty())
+
                 FormField(
                     uid = stageDls.dataElement()?.uid().orEmpty(),
-                    label = stageDls.dataElement()?.displayFormName().orEmpty(),
-                    type = stageDls.dataElement()?.valueType(),
+                    label = dataElement?.displayFormName().orEmpty(),
+                    type = dataElement?.valueType(),
                     placeholder = hintProvider
-                        .provideDateHint(stageDls.dataElement()?.valueType() ?: ValueType.TEXT),
+                        .provideDateHint(dataElement?.valueType() ?: ValueType.TEXT),
                     options = getOptions(program, stageDls.dataElement()?.uid().orEmpty())
                 )
             }
