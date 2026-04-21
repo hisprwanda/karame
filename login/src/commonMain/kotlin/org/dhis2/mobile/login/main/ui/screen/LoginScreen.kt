@@ -62,7 +62,7 @@ import org.dhis2.mobile.login.main.ui.state.DatabaseImportState
 import org.dhis2.mobile.login.main.ui.state.OidcInfo
 import org.dhis2.mobile.login.main.ui.viewmodel.LoginViewModel
 import org.dhis2.mobile.login.resources.Res
-import org.dhis2.mobile.login.resources.ic_dhis_logo
+import org.dhis2.mobile.login.resources.emis_logo_white
 import org.dhis2.mobile.login.resources.import_database
 import org.dhis2.mobile.login.resources.importing_successful
 import org.hisp.dhis.mobile.ui.designsystem.component.IconButton
@@ -74,8 +74,8 @@ import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
 import org.hisp.dhis.mobile.ui.designsystem.theme.TextColor
 import org.hisp.dhis.mobile.ui.designsystem.theme.dropShadow
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.resources.vectorResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -294,8 +294,8 @@ fun LoginTopBar(
                         .padding(8.dp)
                         .height(48.dp)
                         .align(Alignment.Center),
-                imageVector = vectorResource(resource = Res.drawable.ic_dhis_logo),
-                contentDescription = "dhis2 logo",
+                painter = painterResource(resource = Res.drawable.emis_logo_white),
+                contentDescription = "Karame logo",
             )
 
             if (displayMoreActions) {
