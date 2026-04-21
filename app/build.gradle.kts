@@ -156,25 +156,17 @@ android {
     flavorDimensions += listOf("default")
 
     productFlavors {
-        create("dhis") {
+        create("dhis2") {
             applicationId = "com.mineduc.karame"
-            dimension = "default"
-            versionCode = libs.versions.vCode.get().toInt()
-            versionName = libs.versions.semis.get()
+            signingConfig = signingConfigs.getByName("release")
         }
-
-        create("dhisPlayServices") {
+        create("dhis2PlayServices") {
             applicationId = "com.mineduc.karame"
-            dimension = "default"
-            versionCode = libs.versions.vCode.get().toInt()
-            versionName = libs.versions.semis.get()
+            signingConfig = signingConfigs.getByName("release")
         }
-
-        create("dhisUITesting") {
+        create("dhis2Training") {
             applicationId = "com.mineduc.karame"
-            dimension = "default"
-            versionCode = libs.versions.vCode.get().toInt()
-            versionName = libs.versions.semis.get()
+            signingConfig = signingConfigs.getByName("training")
         }
     }
 
