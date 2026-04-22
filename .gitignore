@@ -14,3 +14,5 @@
 .kotlin/
 __pycache__/
 *.pyc
+/.draft-releases/
+/build_log.txt
