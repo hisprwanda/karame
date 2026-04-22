@@ -35,7 +35,7 @@ class VersionRepository(
             .latestAppVersion()
             .blockingGet()
             ?.version()
-            .takeIf { it?.newVersion(BuildConfig.VERSION_NAME) ?: false }
+            .takeIf { it?.newVersion(BuildConfig.SEMIS_VERSION) ?: false }
 
     suspend fun checkVersionUpdates() {
         val versionNameOrNull = getLatestVersionInfo()
