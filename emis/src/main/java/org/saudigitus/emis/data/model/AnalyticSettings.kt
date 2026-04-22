@@ -1,12 +1,10 @@
 package org.saudigitus.emis.data.model
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.databind.ObjectMapper
-import org.saudigitus.emis.utils.Mapper.translateJsonToObject
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class AnalyticSettings(
-    @JsonProperty("tei")
+    @SerializedName("tei")
     val tei: List<Analytic>
 )

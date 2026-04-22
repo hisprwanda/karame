@@ -59,6 +59,7 @@ class RuleEngineRepository @Inject constructor(
             .blockingGet()
             .map {
                 it.toRuleVariable(
+                    d2.optionModule().options(),
                     d2.trackedEntityModule().trackedEntityAttributes(),
                     d2.dataElementModule().dataElements(),
                 )
@@ -119,12 +120,8 @@ class RuleEngineRepository @Inject constructor(
                         .uid(
                             event.organisationUnit(),
                         ).blockingGet()?.code(),
-                    dataValues = event.trackedEntityDataValues()?.toRuleDataValue(
-                        event,
-                        d2.dataElementModule().dataElements(),
-                        d2.programModule().programRuleVariables(),
-                        d2.optionModule().options(),
-                    ) ?: emptyList(),
+                    dataValues = event.trackedEntityDataValues()?.toRuleDataValue() ?: emptyList(),
+                    createdDate = Instant.fromEpochMilliseconds(event.created()!!.time),
                 )
             }
     }
@@ -200,6 +197,7 @@ class RuleEngineRepository @Inject constructor(
             organisationUnit = event.organisationUnit()!!,
             organisationUnitCode = d2.organisationUnit(event.organisationUnit()!!)?.code(),
             dataValues = dataValues,
+            createdDate = Instant.fromEpochMilliseconds(event.created()!!.time),
         )
     }
 
@@ -232,13 +230,9 @@ class RuleEngineRepository @Inject constructor(
     }
 
     private fun dataEntry(
-        event: String,
-        stage: String,
         dataElement: String,
         value: String,
     ) = RuleDataValue(
-        eventDate = Instant.fromEpochSeconds(DateHelper.dateStringToSeconds(event)),
-        programStage = stage,
         dataElement = dataElement,
         value = value
     )
@@ -257,8 +251,6 @@ class RuleEngineRepository @Inject constructor(
         event,
         Collections.singletonList(
             dataEntry(
-                eventDate,
-                stage,
                 dataElement,
                 value
             )

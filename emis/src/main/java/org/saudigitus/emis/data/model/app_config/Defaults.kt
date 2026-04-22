@@ -1,13 +1,13 @@
 package org.saudigitus.emis.data.model.app_config
 
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class Defaults(
-    @JsonProperty("allowSearching")
+    @SerializedName("allowSearching")
     val allowSearching: Boolean?,
-    @JsonProperty("defaultOrder")
+    @SerializedName("defaultOrder")
     val defaultOrder: String?
 )

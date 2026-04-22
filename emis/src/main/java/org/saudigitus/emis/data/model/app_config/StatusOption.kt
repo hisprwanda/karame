@@ -1,18 +1,18 @@
 package org.saudigitus.emis.data.model.app_config
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class StatusOption(
-    @JsonProperty("code")
+    @SerializedName("code")
     val code: String?,
-    @JsonProperty("color")
+    @SerializedName("color")
     val color: String?,
-    @JsonProperty("ConfigKey")
+    @SerializedName("ConfigKey")
     val configKey: String?,
-    @JsonProperty("icon")
+    @SerializedName("icon")
     val icon: String?,
-    @JsonProperty("key")
+    @SerializedName("key")
     val key: String?
 )

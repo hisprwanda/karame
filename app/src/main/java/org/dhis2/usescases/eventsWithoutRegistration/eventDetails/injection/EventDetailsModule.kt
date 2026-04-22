@@ -6,8 +6,8 @@ import dagger.Provides
 import org.dhis2.commons.data.EventCreationType
 import org.dhis2.commons.di.dagger.PerFragment
 import org.dhis2.commons.locationprovider.LocationProvider
+import org.dhis2.commons.periods.domain.GetEventPeriods
 import org.dhis2.commons.prefs.PreferenceProvider
-import org.dhis2.commons.prefs.PreferenceProviderImpl
 import org.dhis2.commons.resources.DhisPeriodUtils
 import org.dhis2.commons.resources.EventResourcesProvider
 import org.dhis2.commons.resources.MetadataIconProvider
@@ -30,6 +30,7 @@ import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.domain.Configu
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.domain.ConfigureEventDetails
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.domain.ConfigureEventReportDate
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.domain.ConfigureOrgUnit
+import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.domain.ConfigurePeriodSelector
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.domain.CreateOrUpdateEventDetails
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.providers.EventDetailResourcesProvider
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.ui.EventDetailsViewModelFactory
@@ -50,26 +51,22 @@ class EventDetailsModule(
     val initialOrgUnitUid: String?,
     val enrollmentStatus: EnrollmentStatus?,
 ) {
-
     @Provides
     @PerFragment
     fun provideEventDetailResourceProvider(
         resourceManager: ResourceManager,
         eventResourcesProvider: EventResourcesProvider,
-    ): EventDetailResourcesProvider {
-        return EventDetailResourcesProvider(
+    ): EventDetailResourcesProvider =
+        EventDetailResourcesProvider(
             programUid,
             programStageUid,
             resourceManager,
             eventResourcesProvider,
         )
-    }
 
     @Provides
     @PerFragment
-    fun provideGeometryController(): GeometryController {
-        return GeometryController(GeometryParserImpl())
-    }
+    fun provideGeometryController(): GeometryController = GeometryController(GeometryParserImpl())
 
     @Provides
     @PerFragment
@@ -77,29 +74,42 @@ class EventDetailsModule(
         d2: D2,
         resourceManager: ResourceManager,
         periodUtils: DhisPeriodUtils,
-    ): EventDetailsRepository {
-        return EventDetailsRepository(
+        preferenceProvider: PreferenceProvider,
+    ): EventDetailsRepository =
+        EventDetailsRepository(
             d2 = d2,
             programUid = programUid,
             eventUid = eventUid,
             programStageUid = programStageUid,
             eventCreationType = eventCreationType,
-            fieldFactory = FieldViewModelFactoryImpl(
-                HintProviderImpl(context),
-                DisplayNameProviderImpl(
-                    OptionSetConfiguration(d2),
-                    OrgUnitConfiguration(d2),
-                    FileResourceConfiguration(d2),
-                    periodUtils,
+            fieldFactory =
+                FieldViewModelFactoryImpl(
+                    HintProviderImpl(context),
+                    DisplayNameProviderImpl(
+                        OptionSetConfiguration(d2),
+                        OrgUnitConfiguration(d2),
+                        FileResourceConfiguration(d2),
+                        periodUtils,
+                    ),
+                    UiEventTypesProviderImpl(),
+                    KeyboardActionProviderImpl(),
+                    LegendValueProviderImpl(d2, resourceManager),
+                    AutoCompleteProviderImpl(preferenceProvider),
                 ),
-                UiEventTypesProviderImpl(),
-                KeyboardActionProviderImpl(),
-                LegendValueProviderImpl(d2, resourceManager),
-                AutoCompleteProviderImpl(PreferenceProviderImpl(context)),
-            ),
             onError = resourceManager::parseD2Error,
         )
-    }
+
+    @Provides
+    @PerFragment
+    fun provideConfigurePeriodSelector(
+        eventDetailsRepository: EventDetailsRepository,
+        periodUseCase: GetEventPeriods,
+    ): ConfigurePeriodSelector =
+        ConfigurePeriodSelector(
+            enrollmentUid = enrollmentId,
+            eventDetailRepository = eventDetailsRepository,
+            getEventPeriods = periodUseCase,
+        )
 
     @Provides
     @PerFragment
@@ -112,8 +122,9 @@ class EventDetailsModule(
         locationProvider: LocationProvider,
         eventDetailResourcesProvider: EventDetailResourcesProvider,
         metadataIconProvider: MetadataIconProvider,
-    ): EventDetailsViewModelFactory {
-        return EventDetailsViewModelFactory(
+        configurePeriodSelector: ConfigurePeriodSelector,
+    ): EventDetailsViewModelFactory =
+        EventDetailsViewModelFactory(
             ConfigureEventDetails(
                 repository = eventDetailsRepository,
                 resourcesProvider = resourcesProvider,
@@ -147,11 +158,12 @@ class EventDetailsModule(
             eventUid = eventUid,
             geometryController = geometryController,
             locationProvider = locationProvider,
-            createOrUpdateEventDetails = CreateOrUpdateEventDetails(
-                repository = eventDetailsRepository,
-                resourcesProvider = resourcesProvider,
-            ),
+            createOrUpdateEventDetails =
+                CreateOrUpdateEventDetails(
+                    repository = eventDetailsRepository,
+                    resourcesProvider = resourcesProvider,
+                ),
             eventDetailResourcesProvider = eventDetailResourcesProvider,
+            configurePeriodSelector = configurePeriodSelector,
         )
-    }
 }

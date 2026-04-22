@@ -16,12 +16,14 @@ import androidx.lifecycle.distinctUntilChanged
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import org.dhis2.R
 import org.dhis2.commons.resources.ResourceManager
 import org.dhis2.commons.viewmodel.DispatcherProvider
 import org.dhis2.maps.layer.basemaps.BaseMapStyle
 import org.dhis2.maps.usecases.MapStyleConfiguration
+import org.dhis2.model.SnackbarMessage
 import org.dhis2.tracker.NavigationBarUIState
 import org.dhis2.tracker.events.CreateEventUseCase
 import org.dhis2.utils.customviews.navigationbar.NavigationPage
@@ -44,7 +46,9 @@ class ProgramEventDetailViewModel(
     var recreationActivity: Boolean = false
 
     enum class EventProgramScreen {
-        LIST, MAP, ANALYTICS
+        LIST,
+        MAP,
+        ANALYTICS,
     }
 
     private val _currentScreen = MutableLiveData(EventProgramScreen.LIST)
@@ -54,14 +58,18 @@ class ProgramEventDetailViewModel(
     private val _backdropActive = MutableLiveData<Boolean>()
     val backdropActive: LiveData<Boolean> get() = _backdropActive
 
-    private val _shouldNavigateToEventDetails: MutableSharedFlow<String> = MutableSharedFlow(
-        replay = Int.MAX_VALUE,
-    )
+    private val _shouldNavigateToEventDetails: MutableSharedFlow<String> =
+        MutableSharedFlow(
+            replay = Int.MAX_VALUE,
+        )
     val shouldNavigateToEventDetails: SharedFlow<String>
         get() = _shouldNavigateToEventDetails
 
     private val _navigationBarUIState = mutableStateOf(NavigationBarUIState<NavigationPage>())
     val navigationBarUIState: State<NavigationBarUIState<NavigationPage>> = _navigationBarUIState
+
+    private val _snackbarMessage = MutableSharedFlow<SnackbarMessage>()
+    val snackbarMessage = _snackbarMessage.asSharedFlow()
 
     init {
         viewModelScope.launch { loadBottomBarItems() }
@@ -103,13 +111,18 @@ class ProgramEventDetailViewModel(
             )
         }
 
-        _navigationBarUIState.value = _navigationBarUIState.value.copy(
-            items = navItems,
-            selectedItem = navItems.firstOrNull()?.id,
-        )
+        _navigationBarUIState.value =
+            _navigationBarUIState.value.copy(
+                items = navItems,
+                selectedItem = navItems.firstOrNull()?.id,
+            )
 
         if (_navigationBarUIState.value.selectedItem != null) {
-            onNavigationPageChanged(navigationBarUIState.value.items.first().id)
+            onNavigationPageChanged(
+                navigationBarUIState.value.items
+                    .first()
+                    .id,
+            )
         }
     }
 
@@ -143,13 +156,9 @@ class ProgramEventDetailViewModel(
         _backdropActive.value = isActive
     }
 
-    fun fetchMapStyles(): List<BaseMapStyle> {
-        return mapStyleConfig.fetchMapStyles()
-    }
+    fun fetchMapStyles(): List<BaseMapStyle> = mapStyleConfig.fetchMapStyles()
 
-    fun isEditable(eventUid: String): Boolean {
-        return eventRepository.isEventEditable(eventUid)
-    }
+    fun isEditable(eventUid: String): Boolean = eventRepository.isEventEditable(eventUid)
 
     fun onOrgUnitForNewEventSelected(
         orgUnitUid: String,
@@ -165,6 +174,12 @@ class ProgramEventDetailViewModel(
             ).getOrNull()?.let { eventUid ->
                 _shouldNavigateToEventDetails.emit(eventUid)
             }
+        }
+    }
+
+    fun displayMessage(msg: String) {
+        viewModelScope.launch(dispatcher.io()) {
+            _snackbarMessage.emit(SnackbarMessage(message = msg))
         }
     }
 }

@@ -28,23 +28,26 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import org.dhis2.ui.theme.colorPrimary
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
+import org.hisp.dhis.mobile.ui.designsystem.component.ListCardDescriptionModel
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
 import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicator
 import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicatorType
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
+import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
 import org.saudigitus.emis.R
+import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.attendance.AttendanceSummaryDialog
 import org.saudigitus.emis.ui.attendance.BulkAssignComponent
@@ -68,6 +71,7 @@ import org.saudigitus.emis.utils.hasStudent
 internal fun AttendanceUi(
     uiState: AttendanceUiState,
     teiCardMapper: TEICardMapper,
+    students: List<SearchTeiModel>,
     snackbarHostState: SnackbarHostState,
     dateValidator: (Long) -> Boolean,
     onEvent: (AttendanceUiEvent) -> Unit,
@@ -86,7 +90,7 @@ internal fun AttendanceUi(
         AttendanceSummaryDialog(
             title = stringResource(R.string.attendance_summary),
             data = uiState.attendanceSummary,
-            themeColor = colorPrimary,
+            themeColor = SurfaceColor.Primary,
             onCancel = { onEvent(AttendanceUiEvent.DismissSummary) },
             onDone = { onEvent(AttendanceUiEvent.SaveAttendance) },
         )
@@ -97,7 +101,7 @@ internal fun AttendanceUi(
             Toolbar(
                 headers = uiState.toolbarHeaders,
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorPrimary,
+                    containerColor = SurfaceColor.Primary,
                     navigationIconContentColor = Color.White,
                     titleContentColor = Color.White,
                     actionIconContentColor = Color.White,
@@ -125,7 +129,7 @@ internal fun AttendanceUi(
                         } else {
                             stringResource(R.string.submit)
                         },
-                        color = colorPrimary,
+                        color = SurfaceColor.Primary,
                         style = LocalTextStyle.current.copy(
                             fontFamily = FontFamily(Font(R.font.rubik_medium)),
                         ),
@@ -139,7 +143,7 @@ internal fun AttendanceUi(
                             Icons.Default.Save
                         },
                         contentDescription = null,
-                        tint = colorPrimary,
+                        tint = SurfaceColor.Primary,
                     )
                 },
                 onClick = {
@@ -221,7 +225,6 @@ internal fun AttendanceUi(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 when (uiState) {
-                    is AttendanceUiState.IDLE -> Unit
                     is AttendanceUiState.LOADING -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -258,7 +261,7 @@ internal fun AttendanceUi(
                             contentPadding = PaddingValues(bottom = 108.dp),
                         ) {
                             items(
-                                uiState.students,
+                                uiState.students.ifEmpty { students },
                                 key = { student -> student.tei.uid().orEmpty() },
                             ) { student ->
                                 val card =
@@ -280,15 +283,31 @@ internal fun AttendanceUi(
                                         contentAlignment = Alignment.CenterEnd,
                                     ) {
                                         ListCard(
-                                            modifier = Modifier.testTag("TEI_ITEM"),
-                                            listAvatar = card.avatar,
-                                            title = ListCardTitleModel(text = card.title),
-                                            additionalInfoList = card.additionalInfo,
-                                            actionButton = card.actionButton,
-                                            expandLabelText = card.expandLabelText,
-                                            shrinkLabelText = card.shrinkLabelText,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            listCardState = rememberListCardState(
+                                                title = ListCardTitleModel(
+                                                    text = card.title,
+                                                    allowOverflow = false
+                                                ),
+                                                description = card.description?.let {
+                                                    ListCardDescriptionModel(
+                                                        text = it,
+                                                    )
+                                                },
+                                                lastUpdated = card.lastUpdated,
+                                                additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                                                    additionalInfoList = card.additionalInfo,
+                                                    syncProgressItem = AdditionalInfoItem(
+                                                        key = stringResource(id = R.string.syncing),
+                                                        value = "",
+                                                    ),
+                                                    expandLabelText = stringResource(id = R.string.show_more),
+                                                    shrinkLabelText = stringResource(id = R.string.show_less),
+                                                    scrollableContent = true,
+                                                ),
+                                            ),
                                             onCardClick = card.onCardCLick,
-                                            shadow = false,
+                                            listAvatar = card.avatar, actionButton = card.actionButton,
                                         )
                                         AttendanceButton(
                                             key = student.tei.uid(),

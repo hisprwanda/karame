@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.result.ActivityResultLauncher
-import org.dhis2.android.rtsm.data.AppConfig
 import org.dhis2.android.rtsm.ui.home.HomeActivity
 import org.dhis2.commons.Constants
 import org.dhis2.usescases.datasets.datasetDetail.DataSetDetailActivity
@@ -12,6 +11,7 @@ import org.dhis2.usescases.main.program.ProgramUiModel
 import org.dhis2.usescases.programEventDetail.ProgramEventDetailActivity
 import org.dhis2.usescases.searchTrackEntity.SearchTEActivity
 import org.hisp.dhis.android.core.program.ProgramType
+import kotlin.Boolean
 
 sealed class HomeItemData(
     open val uid: String,
@@ -23,7 +23,7 @@ sealed class HomeItemData(
         override val label: String,
         override val accessDataWrite: Boolean,
         val trackedEntityType: String,
-        val stockConfig: AppConfig?,
+        val isStockUseCase: Boolean,
         val isSEMIS: Boolean,
     ) : HomeItemData(uid, label, accessDataWrite)
 
@@ -40,8 +40,8 @@ sealed class HomeItemData(
     ) : HomeItemData(uid, label, accessDataWrite)
 }
 
-fun ProgramUiModel.toHomeItemData(): HomeItemData {
-    return when (programType) {
+fun ProgramUiModel.toHomeItemData(): HomeItemData =
+    when (programType) {
         ProgramType.WITHOUT_REGISTRATION.name ->
             HomeItemData.EventProgram(
                 uid,
@@ -55,25 +55,29 @@ fun ProgramUiModel.toHomeItemData(): HomeItemData {
                 title,
                 accessDataWrite,
                 type!!,
-                stockConfig,
+                isStockUseCase,
                 isSEMIS,
             )
 
-        else -> HomeItemData.DataSet(
-            uid,
-            title,
-            accessDataWrite,
-        )
+        else ->
+            HomeItemData.DataSet(
+                uid,
+                title,
+                accessDataWrite,
+            )
     }
-}
 
-fun ActivityResultLauncher<Intent>.navigateTo(context: Context, homeItemData: HomeItemData) {
+fun ActivityResultLauncher<Intent>.navigateTo(
+    context: Context,
+    homeItemData: HomeItemData,
+) {
     val bundle = Bundle()
-    val idTag = if (homeItemData is HomeItemData.DataSet) {
-        Constants.DATASET_UID
-    } else {
-        Constants.PROGRAM_UID
-    }
+    val idTag =
+        if (homeItemData is HomeItemData.DataSet) {
+            Constants.DATASET_UID
+        } else {
+            Constants.PROGRAM_UID
+        }
 
     bundle.putString(idTag, homeItemData.uid)
     bundle.putString(Constants.DATA_SET_NAME, homeItemData.label)
@@ -89,12 +93,11 @@ fun ActivityResultLauncher<Intent>.navigateTo(context: Context, homeItemData: Ho
                 launch(this)
             }
 
-        is HomeItemData.EventProgram -> {
+        is HomeItemData.EventProgram ->
             Intent(context, ProgramEventDetailActivity::class.java).apply {
                 putExtras(ProgramEventDetailActivity.getBundle(homeItemData.uid))
                 launch(this)
             }
-        }
 
         is HomeItemData.TrackerProgram -> {
             if (homeItemData.isSEMIS) {
@@ -102,12 +105,9 @@ fun ActivityResultLauncher<Intent>.navigateTo(context: Context, homeItemData: Ho
                     putExtras(bundle)
                     launch(this)
                 }
-            } else if (homeItemData.stockConfig != null) {
+            } else if (homeItemData.isStockUseCase) {
                 Intent(context, HomeActivity::class.java).apply {
-                    putExtra(
-                        org.dhis2.android.rtsm.commons.Constants.INTENT_EXTRA_APP_CONFIG,
-                        homeItemData.stockConfig,
-                    )
+                    putExtras(bundle)
                     launch(this)
                 }
             } else {

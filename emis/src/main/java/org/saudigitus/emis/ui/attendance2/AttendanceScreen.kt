@@ -1,6 +1,5 @@
 package org.saudigitus.emis.ui.attendance2
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -14,7 +13,6 @@ import kotlinx.coroutines.flow.collectLatest
 import org.dhis2.commons.R
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.ui.attendance2.state.AttendanceUiEvent
-import org.saudigitus.emis.ui.components.InfoCard
 import org.saudigitus.emis.ui.components.launchBottomSheet
 import org.saudigitus.emis.ui.teis.mapper.TEICardMapper
 import org.saudigitus.emis.utils.DateHelper
@@ -24,9 +22,7 @@ fun AttendanceScreen(
     activity: FragmentActivity,
     viewModel: AttendanceViewModel,
     teiCardMapper: TEICardMapper,
-    program: String,
     students: List<SearchTeiModel>,
-    infoCard: InfoCard,
     onBack: () -> Unit,
     sync: (refresh: (() -> Unit)?, offlineAction: (() -> Unit)?) -> Unit
 ) {
@@ -35,10 +31,6 @@ fun AttendanceScreen(
     val schoolCalendar by viewModel.schoolCalendar.collectAsStateWithLifecycle()
     val currentSchoolCalendar by viewModel.currentSchoolCalendar.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(students) {
-        viewModel.initialize(program, students, infoCard)
-    }
 
     LaunchedEffect(Unit) {
         viewModel.snackbarEvent.collectLatest { message ->
@@ -88,6 +80,7 @@ fun AttendanceScreen(
     AttendanceUi(
         uiState = state,
         teiCardMapper = teiCardMapper,
+        students = students,
         snackbarHostState = snackbarHostState,
         dateValidator = {
             viewModel.validateCalendar(

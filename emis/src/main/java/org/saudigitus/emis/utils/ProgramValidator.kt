@@ -12,7 +12,7 @@ class ProgramValidator @Inject constructor(private val d2: D2) {
             .byKey().eq(Constants.KEY)
             .one().blockingGet()
 
-        val config = EMISConfig.fromJson(dataStore?.value()) ?: emptyList()
+        val config = EMISConfig.fromJson(decodeJson(dataStore?.value())) ?: emptyList()
         return config.find { it.program == program } != null
     }
 }

@@ -3,7 +3,6 @@ package org.saudigitus.emis.ui.attendance
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -13,7 +12,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.dhis2.commons.R
 import org.dhis2.commons.resources.ResourceManager
 import org.hisp.dhis.android.core.common.ValueType
 import org.saudigitus.emis.data.local.DataManager
@@ -34,7 +32,6 @@ import org.saudigitus.emis.utils.getOption
 import timber.log.Timber
 import javax.inject.Inject
 
-@HiltViewModel
 class AttendanceViewModel
 @Inject constructor(
     private val repository: DataManager,

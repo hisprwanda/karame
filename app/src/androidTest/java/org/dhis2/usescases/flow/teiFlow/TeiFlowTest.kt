@@ -5,8 +5,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.dhis2.LazyActivityScenarioRule
-import org.dhis2.common.mockwebserver.MockWebServerRobot.Companion.API_OLD_TRACKED_ENTITY_PATH
-import org.dhis2.common.mockwebserver.MockWebServerRobot.Companion.API_OLD_TRACKED_ENTITY_RESPONSE
+import org.dhis2.common.mockwebserver.MockWebServerRobot.Companion.API_TRACKED_ENTITY_EMPTY_RESPONSE
+import org.dhis2.common.mockwebserver.MockWebServerRobot.Companion.API_TRACKED_ENTITY_PATH
 import org.dhis2.commons.date.DateUtils
 import org.dhis2.lazyActivityScenarioRule
 import org.dhis2.usescases.BaseTest
@@ -40,10 +40,11 @@ class TeiFlowTest : BaseTest() {
 
     @Test
     fun shouldEnrollToSameProgramAfterClosingIt() {
+        enableIntents()
         mockWebServerRobot.addResponse(
             ResponseController.GET,
-            API_OLD_TRACKED_ENTITY_PATH,
-            API_OLD_TRACKED_ENTITY_RESPONSE,
+            API_TRACKED_ENTITY_PATH,
+            API_TRACKED_ENTITY_EMPTY_RESPONSE,
         )
 
         val totalEventsPerEnrollment = 3
@@ -57,7 +58,8 @@ class TeiFlowTest : BaseTest() {
         teiFlowRobot(composeTestRule) {
             registerTEI(registerTeiDetails)
             closeEnrollmentAndCheckEvents()
-            enrollToProgram(ADULT_WOMAN_PROGRAM)
+            composeTestRule.waitForIdle()
+            enrollToProgram(ADULT_WOMAN_PROGRAM, enrollmentListDetails)
             checkActiveAndPastEnrollmentDetails(enrollmentListDetails)
             checkPastEventsAreClosed(totalEventsPerEnrollment)
         }
@@ -81,13 +83,13 @@ class TeiFlowTest : BaseTest() {
     private fun createFirstSpecificDate() = DateRegistrationUIModel(
         2016,
         6,
-        30
+        9
     )
 
     private fun createEnrollmentDate() = DateRegistrationUIModel(
         2017,
         6,
-        30
+        9
     )
 
     private fun getCurrentDate(): String {
@@ -118,7 +120,5 @@ class TeiFlowTest : BaseTest() {
         const val ORG_UNIT = "Ngelehun CHC"
         const val NAME = "Marta"
         const val LASTNAME = "Stuart"
-
-        const val DATE_FORMAT = "dd/M/yyyy"
     }
 }

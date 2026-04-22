@@ -2,7 +2,6 @@ package org.saudigitus.emis.ui.home
 
 import android.os.Bundle
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +29,6 @@ import org.saudigitus.emis.utils.Constants
 import javax.inject.Inject
 
 
-@HiltViewModel
 class HomeViewModel
 @Inject constructor(
     private val repository: DataManager,

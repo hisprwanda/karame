@@ -1,16 +1,16 @@
 package org.saudigitus.emis.data.model
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class FilterDataElement(
-    @JsonProperty("code")
+    @SerializedName("code")
     val code: String?,
-    @JsonProperty("dataElement")
+    @SerializedName("dataElement")
     val dataElement: String?,
-    @JsonProperty("label")
+    @SerializedName("label")
     val label: String?,
-    @JsonProperty("order")
+    @SerializedName("order")
     val order: Int?
 )
