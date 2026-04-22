@@ -16,3 +16,5 @@ __pycache__/
 *.pyc
 /.draft-releases/
 /build_log.txt
+/.drafts/keys/
+/.drafts/keys.zip
