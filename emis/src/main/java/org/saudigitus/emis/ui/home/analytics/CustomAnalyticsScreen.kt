@@ -31,7 +31,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.dhis2.ui.theme.colorPrimary
+import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
 import org.saudigitus.emis.R
 import org.saudigitus.emis.ui.components.InfoCard
 import org.saudigitus.emis.ui.components.ShowCard
@@ -89,7 +89,7 @@ fun CustomAnalyticsScreen(
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_sliders),
                             contentDescription = null,
-                            tint = colorPrimary,
+                            tint = SurfaceColor.Primary,
                         )
                         Text(
                             text = cardValues?.displayName.orEmpty(),
@@ -129,7 +129,7 @@ fun CustomAnalyticsScreen(
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_sliders),
                             contentDescription = null,
-                            tint = colorPrimary
+                            tint = SurfaceColor.Primary
                         )
                         Text(
                             text = singleValues?.displayName.orEmpty(),

@@ -1,6 +1,5 @@
 package org.saudigitus.emis.ui.attendance
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,8 +46,8 @@ import androidx.compose.ui.util.fastFilterNotNull
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import org.dhis2.ui.theme.colorPrimary
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.data.model.schoolcalendar_config.SchoolCalendar
@@ -118,7 +117,7 @@ fun AttendanceScreen(
         AttendanceSummaryDialog(
             title = stringResource(R.string.attendance_summary),
             data = viewModel.getSummary(),
-            themeColor = colorPrimary,
+            themeColor = SurfaceColor.Primary,
             disableActions = isAttendanceCompleted,
             onCancel = { viewModel.setAttendanceStep(ButtonStep.HOLD_SAVING) },
         ) {
@@ -212,7 +211,7 @@ fun AttendanceScreen(
             Toolbar(
                 headers = toolbarHeaders,
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorPrimary,
+                    containerColor = SurfaceColor.Primary,
                     navigationIconContentColor = Color.White,
                     titleContentColor = Color.White,
                     actionIconContentColor = Color.White,
@@ -265,7 +264,7 @@ fun AttendanceScreen(
                         } else {
                             stringResource(R.string.submit)
                         },
-                        color = colorPrimary,
+                        color = SurfaceColor.Primary,
                         style = LocalTextStyle.current.copy(
                             fontFamily = FontFamily(Font(R.font.rubik_medium)),
                         ),
@@ -279,7 +278,7 @@ fun AttendanceScreen(
                             Icons.Default.Save
                         },
                         contentDescription = null,
-                        tint = colorPrimary,
+                        tint = SurfaceColor.Primary,
                     )
                 },
                 onClick = {

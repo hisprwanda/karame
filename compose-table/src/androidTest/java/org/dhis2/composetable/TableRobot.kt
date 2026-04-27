@@ -1,7 +1,7 @@
 package org.dhis2.composetable
 
 import androidx.annotation.DrawableRes
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +73,8 @@ import org.dhis2.composetable.ui.semantics.RowIndexHeader
 import org.dhis2.composetable.ui.semantics.TableId
 import org.dhis2.composetable.ui.semantics.TableIdColumnHeader
 import org.dhis2.composetable.utils.KeyboardHelper
+import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
+import org.hisp.dhis.mobile.ui.designsystem.theme.TextColor
 import org.junit.Assert
 
 fun tableRobot(
@@ -91,40 +93,6 @@ class TableRobot(
     lateinit var onSaveTableCell: TableCell
     val keyboardHelper = KeyboardHelper(composeTestRule, timeout = 3000L)
 
-    fun initTable(
-        fakeModelType: FakeModelType,
-        tableColors: TableColors = TableColors(),
-        onSave: (TableCell) -> Unit = {}
-    ): List<TableModel> {
-        var fakeModel: List<TableModel> = emptyList()
-        composeTestRule.setContent {
-            fakeModel = FakeTableModels(LocalContext.current).getMultiHeaderTables(fakeModelType)
-            var tableSelection by remember {
-                mutableStateOf<TableSelection>(TableSelection.Unselected())
-            }
-            TableTheme(
-                tableColors = TableColors().copy(primary = MaterialTheme.colors.primary),
-                tableConfiguration = TableConfiguration(headerActionsEnabled = false),
-                tableResizeActions = object : TableResizeActions {}
-            ) {
-                val iteractions = object : TableInteractions {
-                    override fun onSelectionChange(newTableSelection: TableSelection) {
-                        tableSelection = newTableSelection
-                    }
-                }
-                CompositionLocalProvider(
-                    LocalTableSelection provides tableSelection,
-                    LocalInteraction provides iteractions
-                ) {
-                    DataTable(
-                        tableList = fakeModel
-                    )
-                }
-            }
-        }
-        return fakeModel
-    }
-
     fun initTableAppScreen(
         fakeModelType: FakeModelType,
         tableAppScreenOptions: TableAppScreenOptions = TableAppScreenOptions(),
@@ -140,7 +108,7 @@ class TableRobot(
             keyboardHelper.view = LocalView.current
             var model by remember { mutableStateOf(screenState) }
             TableTheme(
-                tableColors = TableColors().copy(primary = MaterialTheme.colors.primary),
+                tableColors = TableColors().copy(primary = SurfaceColor.Primary),
                 tableConfiguration = tableConfiguration,
                 tableResizeActions = object : TableResizeActions {}
             ) {
@@ -187,7 +155,7 @@ class TableRobot(
 
             val model by remember { mutableStateOf(screenState) }
             TableTheme(
-                tableColors = TableColors().copy(primary = MaterialTheme.colors.primary),
+                tableColors = TableColors().copy(primary = MaterialTheme.colorScheme.primary),
                 tableConfiguration = TableConfiguration(),
                 tableResizeActions = object : TableResizeActions {}
             ) {
@@ -277,7 +245,7 @@ class TableRobot(
         composeTestRule.onNode(
             SemanticsMatcher.expectValue(TableId, tableId)
                 .and(SemanticsMatcher.expectValue(RowIndex, rowIndex))
-                .and(SemanticsMatcher.expectValue(RowBackground, tableColors.primary))
+                .and(SemanticsMatcher.expectValue(RowBackground, SurfaceColor.Primary))
         ).assertExists()
     }
 

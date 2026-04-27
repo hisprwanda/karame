@@ -1,15 +1,15 @@
 package org.saudigitus.emis.data.model.app_config
 
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class Performance(
-    @JsonProperty("enabled")
+    @SerializedName("enabled")
     val enabled: Boolean?,
-    @JsonProperty("lastUpdate")
+    @SerializedName("lastUpdate")
     val lastUpdate: String?,
-    @JsonProperty("programStages")
+    @SerializedName("programStages")
     val programStages: List<ProgramStages?>?
 )

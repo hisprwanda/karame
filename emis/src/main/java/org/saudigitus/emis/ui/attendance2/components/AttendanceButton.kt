@@ -34,14 +34,8 @@ fun AttendanceButton(
     state: AttendanceButtonState,
     onClick: (AttendanceButtonModel) -> Unit
 ) {
-    if (state.buttons.isEmpty() && !state.isLoading && !state.isEditing) {
-        Icon(
-            modifier = modifier.then(Modifier.size(45.dp)),
-            imageVector = Icons.AutoMirrored.Filled.Help,
-            contentDescription = null,
-            tint = Color.LightGray
-        )
-    } else if (state.attendanceEvents.isEmpty() && !state.isLoading && !state.isEditing) {
+    if ((state.buttons.isEmpty() && !state.isLoading && !state.isEditing) ||
+        (state.attendanceEvents.isEmpty() && !state.isLoading && !state.isEditing)) {
         Icon(
             modifier = modifier.then(Modifier.size(45.dp)),
             imageVector = Icons.AutoMirrored.Filled.Help,

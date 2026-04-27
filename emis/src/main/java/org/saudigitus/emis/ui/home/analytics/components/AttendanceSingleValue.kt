@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.dhis2.ui.theme.colorPrimary
 import org.hisp.dhis.mobile.ui.designsystem.theme.Spacing
 import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
 
@@ -69,7 +68,7 @@ fun TotalAbsenceComponent(
                     .width(4.dp)
                     .height(24.dp)
                     .background(
-                        color = colorPrimary, // Blue color for the accent
+                        color = SurfaceColor.Primary, // Blue color for the accent
                         shape = RoundedCornerShape(topEnd = 4.dp, bottomEnd = 4.dp)
                     )
             )

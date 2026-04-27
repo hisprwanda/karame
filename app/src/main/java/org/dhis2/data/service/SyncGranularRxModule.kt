@@ -16,9 +16,7 @@ import org.saudigitus.emis.network.HttpClientHelper
 class SyncGranularRxModule {
     @Provides
     @PerService
-    fun syncRepository(d2: D2): SyncRepository {
-        return SyncRepositoryImpl(d2)
-    }
+    fun syncRepository(d2: D2): SyncRepository = SyncRepositoryImpl(d2)
 
     @Provides
     @PerService
@@ -41,8 +39,8 @@ class SyncGranularRxModule {
         syncStatusController: SyncStatusController,
         syncRepository: SyncRepository,
         syncHelperRepository: SyncHelperRepository
-    ): SyncPresenter {
-        return SyncPresenterImpl(
+    ): SyncPresenter =
+        SyncPresenterImpl(
             d2,
             preferences,
             workManagerController,
@@ -51,5 +49,4 @@ class SyncGranularRxModule {
             syncRepository,
             syncHelperRepository,
         )
-    }
 }

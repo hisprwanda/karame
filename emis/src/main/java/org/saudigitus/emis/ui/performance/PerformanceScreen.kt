@@ -49,10 +49,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.InputShellState
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardColumn
+import org.hisp.dhis.mobile.ui.designsystem.component.ListCardDescriptionModel
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.attendance.ButtonStep
@@ -259,18 +263,31 @@ fun PerformanceScreen(
                                 ),
                             ) {
                                 ListCard(
-                                    modifier = Modifier
-                                        .testTag("TEI_ITEM")
-                                        .background(
-                                            color = if (isInactive) Color.LightGray.copy(.25f) else Color.White,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    listCardState = rememberListCardState(
+                                        title = ListCardTitleModel(
+                                            text = card.title,
+                                            allowOverflow = false
                                         ),
-                                    listAvatar = card.avatar,
-                                    title = ListCardTitleModel(text = card.title),
-                                    additionalInfoList = card.additionalInfo,
-                                    actionButton = card.actionButton,
-                                    expandLabelText = card.expandLabelText,
-                                    shrinkLabelText = card.shrinkLabelText,
+                                        description = card.description?.let {
+                                            ListCardDescriptionModel(
+                                                text = it,
+                                            )
+                                        },
+                                        lastUpdated = card.lastUpdated,
+                                        additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                                            additionalInfoList = card.additionalInfo,
+                                            syncProgressItem = AdditionalInfoItem(
+                                                key = stringResource(id = R.string.syncing),
+                                                value = "",
+                                            ),
+                                            expandLabelText = stringResource(id = R.string.show_more),
+                                            shrinkLabelText = stringResource(id = R.string.show_less),
+                                            scrollableContent = true,
+                                        ),
+                                    ),
                                     onCardClick = card.onCardCLick,
+                                    listAvatar = card.avatar, actionButton = card.actionButton,
                                 )
                             }
 

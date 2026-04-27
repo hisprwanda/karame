@@ -3,35 +3,36 @@ package org.saudigitus.emis
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.android.material.snackbar.Snackbar
-import dagger.hilt.android.AndroidEntryPoint
 import org.dhis2.commons.Constants
 import org.dhis2.commons.navigator.AppNavigator
 import org.dhis2.commons.network.NetworkUtils
 import org.dhis2.commons.sync.OnDismissListener
 import org.dhis2.commons.sync.SyncContext
 import org.dhis2.commons.sync.SyncDialog
-import org.saudigitus.emis.ui.attendance.AttendanceScreen
-import org.saudigitus.emis.ui.attendance.AttendanceViewModel
+import org.koin.android.ext.android.inject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.saudigitus.emis.ui.home.HomeRoute
 import org.saudigitus.emis.ui.home.HomeViewModel
 import org.saudigitus.emis.ui.performance.PerformanceScreen
@@ -43,16 +44,14 @@ import org.saudigitus.emis.ui.teis.mapper.TEICardMapper
 import org.saudigitus.emis.ui.theme.EMISAndroidTheme
 import javax.inject.Inject
 
-@AndroidEntryPoint
+
 class MainActivity : FragmentActivity() {
 
-    private val viewModel: HomeViewModel by viewModels()
+    private val viewModel: HomeViewModel by viewModel()
 
-    @Inject
-    lateinit var teiCardMapper: TEICardMapper
+    private val teiCardMapper: TEICardMapper by inject()
 
-    @Inject
-    lateinit var networkUtils: NetworkUtils
+    private val networkUtils: NetworkUtils by inject()
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +60,8 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             val widthSizeClass = calculateWindowSizeClass(this).widthSizeClass
-            val isExpandedScreen = (widthSizeClass == WindowWidthSizeClass.Medium) || (widthSizeClass == WindowWidthSizeClass.Expanded)
+            val isExpandedScreen =
+                (widthSizeClass == WindowWidthSizeClass.Medium) || (widthSizeClass == WindowWidthSizeClass.Expanded)
 
             EMISAndroidTheme(
                 darkTheme = false,
@@ -107,18 +107,24 @@ class MainActivity : FragmentActivity() {
                                 },
                             ),
                         ) {
-                            val attendanceViewModel: org.saudigitus.emis.ui.attendance2.AttendanceViewModel = hiltViewModel()
+                            val attendanceViewModel: org.saudigitus.emis.ui.attendance2.AttendanceViewModel =
+                                koinViewModel()
                             val teis by viewModel.teis.collectAsStateWithLifecycle()
                             val infoCard by viewModel.infoCard.collectAsStateWithLifecycle()
 
+                            LaunchedEffect(teis) {
+                                attendanceViewModel.initialize(
+                                    intent?.extras?.getString(Constants.PROGRAM_UID).orEmpty(),
+                                    teis,
+                                    infoCard
+                                )
+                            }
 
                             org.saudigitus.emis.ui.attendance2.AttendanceScreen(
                                 this@MainActivity,
                                 attendanceViewModel,
                                 teiCardMapper,
-                                intent?.extras?.getString(Constants.PROGRAM_UID).orEmpty(),
                                 teis,
-                                infoCard,
                                 navController::navigateUp,
                                 ::syncProgram,
                             )
@@ -140,16 +146,24 @@ class MainActivity : FragmentActivity() {
                                 },
                             ),
                         ) {
-                            val attendanceViewModel: AttendanceViewModel = hiltViewModel()
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                Text(stringResource(R.string.unvailable_now))
+                            }
+                            /*val attendanceViewModel: AttendanceViewModel = koinViewModel()
                             val infoCard by attendanceViewModel.infoCard.collectAsStateWithLifecycle()
 
-                            attendanceViewModel.setDefaults(stringResource(R.string.absenteeism), true)
+                            attendanceViewModel.setDefaults(
+                                stringResource(R.string.absenteeism),
+                                true
+                            )
                             attendanceViewModel.setOptions(
                                 it.arguments?.getString("academicYear") ?: "",
                                 it.arguments?.getString("grade") ?: "",
                                 it.arguments?.getString("section") ?: "",
                             )
-                            attendanceViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
+                            attendanceViewModel.setProgram(
+                                intent?.extras?.getString(Constants.PROGRAM_UID) ?: ""
+                            )
                             attendanceViewModel.setInfoCard(viewModel.infoCard.collectAsStateWithLifecycle().value)
                             attendanceViewModel.setOU(it.arguments?.getString("ou") ?: "")
 
@@ -161,7 +175,7 @@ class MainActivity : FragmentActivity() {
                                 infoCard = infoCard,
                                 navController::navigateUp,
                                 ::syncProgram,
-                            )
+                            )*/
                         }
                         composable(
                             route = "${AppRoutes.PERFORMANCE_ROUTE}/{ou}/{stage}/{dataElement}/{subjectName}",
@@ -180,7 +194,7 @@ class MainActivity : FragmentActivity() {
                                 },
                             ),
                         ) {
-                            val performanceViewModel = hiltViewModel<PerformanceViewModel>()
+                            val performanceViewModel = koinViewModel<PerformanceViewModel>()
                             val uiState by performanceViewModel.uiState.collectAsStateWithLifecycle()
                             val infoCard by performanceViewModel.infoCard.collectAsStateWithLifecycle()
                             val stats by performanceViewModel.cache.collectAsStateWithLifecycle()
@@ -192,7 +206,9 @@ class MainActivity : FragmentActivity() {
                             val ou = it.arguments?.getString("ou") ?: ""
 
                             performanceViewModel.setOU(ou)
-                            performanceViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
+                            performanceViewModel.setProgram(
+                                intent?.extras?.getString(Constants.PROGRAM_UID) ?: ""
+                            )
                             performanceViewModel.loadSubjects(stage)
                             performanceViewModel.setTeis(teis, performanceViewModel::updateTEISList)
                             performanceViewModel.setInfoCard(viewModel.infoCard.collectAsStateWithLifecycle().value)
@@ -206,7 +222,10 @@ class MainActivity : FragmentActivity() {
                                 infoCard = infoCard,
                                 defaultSelection = it.arguments?.getString("subjectName") ?: "",
                                 setPerformanceState = performanceViewModel::fieldState,
-                                performanceStats = Pair("${stats.size}", "${teis.size.minus(stats.size)}"),
+                                performanceStats = Pair(
+                                    "${stats.size}",
+                                    "${teis.size.minus(stats.size)}"
+                                ),
                                 performanceStep = performanceStep,
                                 setDate = performanceViewModel::setDate,
                                 onNext = performanceViewModel::onClickNext,
@@ -224,11 +243,13 @@ class MainActivity : FragmentActivity() {
                                 },
                             ),
                         ) {
-                            val subjectViewModel = hiltViewModel<SubjectViewModel>()
+                            val subjectViewModel = koinViewModel<SubjectViewModel>()
                             val state by subjectViewModel.uiState.collectAsStateWithLifecycle()
                             val stage by subjectViewModel.programStage.collectAsStateWithLifecycle()
                             val infoCard by viewModel.infoCard.collectAsStateWithLifecycle()
-                            subjectViewModel.setProgram(intent?.extras?.getString(Constants.PROGRAM_UID) ?: "")
+                            subjectViewModel.setProgram(
+                                intent?.extras?.getString(Constants.PROGRAM_UID) ?: ""
+                            )
                             val ou = it.arguments?.getString("ou") ?: ""
 
                             SubjectScreen(
@@ -249,7 +270,7 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun syncProgram(
-        refresh : (() -> Unit)? = null,
+        refresh: (() -> Unit)? = null,
         offlineAction: (() -> Unit)? = null,
     ) {
         if (networkUtils.isOnline()) {
@@ -263,6 +284,7 @@ class MainActivity : FragmentActivity() {
                         getString(R.string.sync_offline_check_connection),
                         Snackbar.LENGTH_SHORT,
                     ).show()
+                    offlineAction?.invoke()
                 },
                 dismissListener = object : OnDismissListener {
                     override fun onDismiss(hasChanged: Boolean) {

@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,14 +23,14 @@ import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
 class IndicatorViewHolder(
     val parent: ViewGroup,
 ) : RecyclerView.ViewHolder(ComposeView(parent.context)) {
-
     fun bind(programIndicatorModel: IndicatorModel) {
         val view = itemView as ComposeView
         view.apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            )
+            layoutParams =
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                )
 
             setContent {
                 Column(
@@ -40,7 +40,7 @@ class IndicatorViewHolder(
                             if (programIndicatorModel.programIndicator?.description() != null) {
                                 Modifier.clickable(
                                     interactionSource = remember { MutableInteractionSource() },
-                                    indication = rememberRipple(),
+                                    indication = ripple(),
                                     onClick = { showDescription(programIndicatorModel.programIndicator) },
                                 )
                             } else {
@@ -50,23 +50,25 @@ class IndicatorViewHolder(
                 ) {
                     Indicator(
                         title = programIndicatorModel.label(),
-                        indicatorColor = if (!programIndicatorModel.color.isNullOrEmpty()) {
-                            Color(programIndicatorModel.color())
-                        } else {
-                            SurfaceColor.Container
-                        },
-                        content = programIndicatorModel.value ?: "",
-                        modifier = Modifier.then(
-                            if (programIndicatorModel.programIndicator?.description() != null) {
-                                Modifier.clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = rememberRipple(),
-                                    onClick = { showDescription(programIndicatorModel.programIndicator) },
-                                )
+                        indicatorColor =
+                            if (!programIndicatorModel.color.isNullOrEmpty()) {
+                                Color(programIndicatorModel.color())
                             } else {
-                                Modifier
+                                SurfaceColor.Container
                             },
-                        ),
+                        content = programIndicatorModel.value ?: "",
+                        modifier =
+                            Modifier.then(
+                                if (programIndicatorModel.programIndicator?.description() != null) {
+                                    Modifier.clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = ripple(),
+                                        onClick = { showDescription(programIndicatorModel.programIndicator) },
+                                    )
+                                } else {
+                                    Modifier
+                                },
+                            ),
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                 }

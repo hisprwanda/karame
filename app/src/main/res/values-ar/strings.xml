@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!--GENERAL-->
     <string name="app_name">Dhis2</string>
     <string name="logo_text">dhis</string>
@@ -37,11 +37,7 @@
     <string name="sync_error_title">خطأ في المزامنة</string>
     <string name="sync_error_text">حدث خطأ أثناء المزامنة. يرجى اعادة المحاولة.</string>
     <string name="sync_incomplete_error_text">انتهت المزامنة ولكن لم نتلق تأكيدًا من الخادم لجميع السجلات. هذه السجلات لا تزال تحمل علامة \"غير مزامن\" في التطبيق. نوصي بإعادة محاولة المزامنة.</string>
-    <string name="metadata_sync_error">فشل: حدث خطأ في عملية المزامنة. إذا كنت متصلاً بالشبكة يرجى المحاولة مرة أخرى. إذا استمر الخطأ ، فاتصل بالمسؤول.</string>
-    <string name="data_sync_warning">تحذير: تم مزامنة معظم البيانات الخاصة بك ولكن يوجد تعارضات في بعض الحقول. قم بعمل مزامنة للتكوين الخاص بك وحاول مرة أخرى. تحقق من حالة المزامنة: يتم وضع علامة @ على البرامج و TEI والأحداث المتعارضة.</string>
     <string name="data_sync_warning_program">تحذير: تم مزامنة معظم البيانات الخاصة بك ولكن يوجد تعارضات في بعض الحقول. قم بعمل مزامنة للتكوين الخاص بك وحاول مرة أخرى. إذا استمر التحذير ، فتحقق من حالة المزامنة: يتم وضع علامة @ على البرامج و TEI والأحداث المتعارضة.</string>
-    <string name="data_sync_error">خطأ: تعذر مزامنة بعض بياناتك. تحقق من حالة المزامنة: يتم وضع علامة @ على البرامج التي بها أخطاء، و $ على TEI والأحداث التي فيها تعارض\".</string>
-    <string name="data_sync_error_program">خطأ: تعذر مزامنة بعض بياناتك. تحقق من حالة المزامنة: يتم وضع علامة $ على الأحداث و TEI التي تحوي على تعارضات\".</string>
     <string name="server_sync_error">حدث خطأ ولم يستجب الخادم. تواصل مع مديرك.</string>
 
     <string name="search_result_text">تم العثور على %s نتيجة</string>
@@ -79,6 +75,9 @@
 
     <!-- Input hints -->
     <string name="search">بحث</string>
+    <string name="search_add_new_te_type">بحث / إضافة جديد %s</string>
+    <string name="search_te_type">البحث عن %s</string>
+    <string name="add_te_type">إضافة جديد %s</string>
     <string name="enter_text">أدخل نصًا</string>
     <string name="enter_long_text">أدخل نصًا طويلاً</string>
     <string name="enter_number">ادخل رقمًا</string>
@@ -95,6 +94,8 @@
     <string name="program_inactive">البرنامج غير نشط</string>
 
     <string name="event_open">مفتوح</string>
+    <string name="event_not_completed">لم يكتمل</string>
+    <string name="event_completed">الحدث مكتمل</string>
     <string name="read_only">للقراءة فقط</string>
     <string name="finish_and_complete">انهاء ومكتمل</string>
     <string name="completed">مكتمل</string>
@@ -145,6 +146,8 @@
     <string name="delete">حذف</string>
     <string name="total">الإجمالي</string>
     <string name="most_recent_event_date">تاريخ أحدث حدث</string>
+    <string name="no_options">لا تتوفر خيارات</string>
+
     <string name="active_programs">البرامج النشطة</string>
     <string name="to_enroll_programs">برامج للتسجيل</string>
     <string name="enroll">تسجيل</string>
@@ -154,17 +157,23 @@
     <!--TEI DASHBOARD-->
     <string name="see_details">انظر التفاصيل</string>
     <string name="view_more">عرض المزيد</string>
+    <string name="edit">تعديل</string>
     <string name="follow_up">متابعة</string>
     <string name="follow_up_enabled">تم تمكين المتابعة</string>
     <string name="follow_up_disabled">تم ايقاف المتابعة</string>
     <string name="deactivate">إلغاء التنشيط</string>
     <string name="program_not_allow_events">هذا البرنامج لا يسمح بإضافة أحداث أكثر</string>
 
+    <!--DONE TASKS-->
+    <string name="events_no_data">لا توجد بيانات</string>
     <string name="events">الأحداث</string>
     <string name="done_task">الرئيسية</string>
     <string name="app_info">معلومات التطبيق</string>
     <string name="log_out">تسجيل الخروج</string>
     <string name="block_session">حظر الجلسة</string>
+    <string name="show_more_events">عرض %s المزيد...</string>
+    <string name="show_less_events">عرض أقل...</string>
+
     <!-- SYNC -->
     <string name="a_minute">1 دقيقة</string>
     <string name="fifteen_minute">15 دقيقة</string>
@@ -179,7 +188,6 @@
     <string name="a_week">1 أسبوع</string>
     <string name="sync_max_parameters">عوامل المزامنة الحالية:</string>
     <string name="sync_default_parameters">إعادة التعيين إلى الافتراضي</string>
-    <string name="wipe_data_meesage">سيتم حذف قاعدة البيانات. سيُطلب منك تسجيل الدخول مرة أخرى.</string>
     <string name="wipe_data_ok">قبول</string>
     <string name="wipe_data_no">إلغاء</string>
     <string name="SYNC_DATA">مزامنة البيانات الآن</string>
@@ -204,7 +212,6 @@
         <item quantity="many">يوجد %s برامج ذات إعدادات محددة</item>
         <item quantity="other">يوجد %s برامج ذات إعدادات محددة</item>
     </plurals>
-    <string name="settings_sync_period">فترة المزامنة</string>
     <string name="settings_limit_scope">الإعدادات محدودة</string>
     <string name="settings_limit_globally">شامل</string>
     <string name="settings_limit_program">لكل برنامج</string>
@@ -226,6 +233,11 @@
     <string name="settingsReset_descr">سيتم حذف بيانات التكوين والتطبيق المخزنة في الجهاز. سيُطلب منك تسجيل الدخول مرة أخرى وستفقد البيانات التي لم يتم مزامنتها مع الخادم.</string>
     <string name="settingsSms">إعدادات SMS</string>
     <string name="settingsSms_descr">فحص وتعديل العوامل المتعلقة ببوابة sms</string>
+    <string name="settingsCheckVersion">تحديث البرنامج</string>
+    <string name="settingsCheckVersionMessage">البرمجيات</string>
+    <string name="settingsExportDB">قاعدة بيانات التصدير</string>
+    <string name="settingsExportDBMessage">قم بتصدير قاعدة البيانات الخاصة بك ومشاركتها مع المسؤول عنك</string>
+    <string name="settingsTwoFAStatus">الحالة</string>
     <!--endregion-->
 
     <string name="enrollmment_date">تاريخ التسجيل</string>
@@ -243,11 +255,10 @@
     <string name="missing_mandatory_fields_title">بعض الحقول الإلزامية مفقودة</string>
     <string name="missing_mandatory_fields_text">بعض الحقول الإلزامية مفقودة. إذا كنت تريد الرجوع الآن ، فسيتم حذف جميع المعلومات المحفوظة.</string>
     <string name="missing_mandatory_fields_text_not_delete">بعض الحقول الإلزامية مفقودة. إذا كنت تريد العودة ، يرجى ملؤها.</string>
-    <string name="missing_mandatory_fields_events">تحتاج بعض الحقول إلى إطلاعك.\n هل تريد مراجعة النموذج؟</string>
+    <string name="missing_mandatory_fields_events">بعض الحقول تحتاج إلى انتباهك.\nهل تريد مراجعة النموذج؟</string>
     <string name="title_delete_go_back">لم يتم حفظ بياناتك</string>
     <string name="delete_go_back">إذا رجعت الآن سيتم حذف جميع المعلومات التي تم إدخالها.</string>
     <string name="missing_mandatory_fields_go_back">الحذف والرجوع للخلف</string>
-    <string name="error_fields">تحتوي بعض الحقول على أخطاء:\n%s\n يرجى التحقق منها.</string>
     <string name="missing_mandatory_fields_finish">بعض الحقول الإلزامية مفقودة. يمكنك إنهاء إدخال البيانات والخروج، لكن لا يمكن تعيين الحدث كمكتمل.</string>
     <string name="tei_coordinates">إحداثيات لـ </string>
 
@@ -288,7 +299,6 @@
     <string name="search_min_num_attr">تحتاج إلى ادخال %d على الأقل من السمات للقيام بالبحث</string>
     <string name="search_attr">تحتاج إلى ادخال واحدة على الأقل من السمات للقيام بالبحث</string>
     <string name="search_max_tei_reached">هناك أكثر من %d نتيجة. يرجى إدخال معايير بحث أخرى</string>
-    <string name="search_criteria_not_met">لم يتم ايجاد أي نتيجة لمعايير البحث التي ادخلتها.\n راجعها أو قم بتسجيل %s جديد</string>
     <string name="search_init">ادخل معايير البحث التي تريد</string>
 
     <!-- QR -->
@@ -314,7 +324,6 @@
     <string name="empty_program_list">لا توجد معلومات لعوامل التصفية المحددة. يرجى محاولة تغييرها.</string>
     <string name="share">مشاركة</string>
     <string name="share_qr">مشاركة رمز الـ QR</string>
-    <string name="teiType_search_online">البحث حسب النوع غير ممكن للبحث عبر الإنترنت.\n يرجى تحديد برنامج من القائمة.</string>
     <string name="max">الأعلى</string>
     <string name="current">الحالي</string>
     <string name="tei">TEI</string>
@@ -370,10 +379,12 @@
     <string name="date_dialog_tigle">حدد التواريخ للتصفية</string>
     <string name="select_option">تحديد الخيار</string>
     <string name="issue_reported">تم الإبلاغ عن المشكلة</string>
+    <string name="dialog_generate_new_event">توليد حدث جديد</string>
     <string name="message_generate_new_event">هل تريد إنشاء حدث جديد</string>
     <string name="event_completed_title">اكتملت الأحداث</string>
     <string name="event_completed_message">اكتمال جميع الأحداث في هذا البرنامج. هل ترغب أيضاً في تعيين البرنامج كمغلق؟</string>
     <string name="complete_enrollment_message">هل ترغب أيضاً في تعيين هذا التسجيل كمكتمل؟</string>
+    <string name="complete_enrollment_message_V2">هل ترغب في إكمال %s أيضاً؟</string>
     <string name="check_event">تحقق</string>
 
     <string name="menu_home">الرئيسية</string>
@@ -412,7 +423,7 @@
     <string name="tuto_main_10">قم بتسجيل الخروج لتغيير المستخدم أو الخادم. ستتمكن من تسجيل الدخول مرة أخرى حتى إذا لم يكن هناك اتصال بالإنترنت.</string>
     <string name="text_plus_colon">%s:</string>
     <string name="relationships">العلاقات</string>
-    <string name="empty_tei_add">لا توجد أحداث مسجلة ، انقر على \"+\" لإضافة حدث جديد.</string>
+    <string name="empty_tei_add">لا توجد أحداث مسجلة، انقر على \"+\" لإضافة حدث جديد.</string>
     <string name="empty_tei_no_add">لا توجد أحداث مسجلة</string>
     <string name="qr_data_values">قيم البيانات</string>
     <string name="info">معلومات</string>
@@ -458,7 +469,8 @@
     <string name="biometrics_dialog_title">إعتمادات فارغة</string>
     <string name="biometrics_first_use_text">لتتمكن من تسجيل الدخول باستخدام ماسح بصمة الإصبع، تحتاج أولاً إلى تسجيل الدخول بإستخدام الطريقة الافتراضية</string>
     <string name="biometrics_security_title">الأمن البيومتري</string>
-    <string name="biometrics_security_text">استخدام بصمة إصبعك لتسجيل الدخول مع هذا المستخدم؟</string>
+    <string name="biometrics_login_title">تسجيل الدخول السريع</string>
+    <string name="biometrics_login_text">هل ترغب في استخدام بصمة إصبعك أو طريقة بيومترية أخرى لتسجيل الدخول؟</string>
     <string name="tab_tables">جداول</string>
     <string name="table">الجدول</string>
     <string name="login_https">https://</string>
@@ -469,12 +481,13 @@
     <string name="org_unit_selection_warning">يجب تحديد وحدة تنظيمية واحدة على الأقل</string>
     <string name="send_user_name_title">إرسال البيانات</string>
     <string name="send_user_name_mesage">ساعد DHIS2 في تحسين هذا التطبيق من خلال مشاركة سجلات الأخطاء المرتبطة بمعرف المستخدم الخاص بك.</string>
+    <string name="improve_app_msg_title">هل تريد مساعدتنا في تحسين هذا التطبيق؟</string>
+    <string name="improve_app_msg_clickable_word">سياسة الخصوصية</string>
     <string name="check_mandatory_field">تحقق من الحقول</string>
     <string name="error_no_network_during_sync">فقدان الإتصال بالإنترنت أثناء عملية مزامنة التكوين. يرجى معاودة المحاولة في وقت لاحق</string>
     <string name="action_agree">قبول</string>
     <string name="action_continue">متابعة</string>
     <string name="login_server_info_title">رابط الخادم</string>
-    <string name="login_server_info_message">أدخل عنوان URL لخادم DHIS 2 لمؤسستك على النحو الذي حصلت عليه من مسؤول النظام.\n\n أو بدلاً من ذلك ، يمكنك مسح رمز الـ QR الذي يحتوي على عنوان URL لخادمك</string>
     <string name="forgot_your_code">نسيت الرمز الخاص بك؟</string>
     <string name="event_form_end_options_title">ما الذي تريد فعله لهذا الحدث؟</string>
     <string name="sectionSelectorEnd">إنهاء</string>
@@ -597,7 +610,6 @@
     <string name="filter_event_status_completed">المكتملة</string>
     <string name="filter_event_status_skipped">التي تم تخطيها</string>
     <string name="event_tei_limits">الأحداث:%s حد أعلى:%s%s حالي:%s TEI:%s حد أعلى:%s%s حالي:%s</string>
-    <string name="event_tei_limits_v2">الإعدادات محدودة %s\n الأحداث: %s/%s، TEI: %s/%s</string>
     <string name="enrollment_data_hide">إخفاء بيانات التسجيل</string>
     <string name="enrollment_data_show">إظهار بيانات التسجيل</string>
     <string name="sms_enabled">وحدة الرسائل القصيرة مفعلة</string>
@@ -681,6 +693,7 @@
     <string name="download_tei_error">تعذر تنزيل %s المحددة</string>
     <string name="completed_by">تم الإكمال من قبل %s:%s</string>
     <string name="updated_time">تم التحديث: %s</string>
+    <string name="action_done">تم</string>
     <string name="validation_internal_error_datasets">لم نتمكن من التحقق من جودة البيانات. تواصل مع مديرك</string>
     <string name="are_you_sure">هل أنت متأكد؟</string>
     <string name="reopen_question">هل تريد إعادة فتح حزمة البيانات؟</string>
@@ -690,11 +703,9 @@
     <string name="privacy_policy_title">سياسة الخصوصية</string>
     <string name="open_privacy_policy">إنقر هنا للإطلاع على <a href=""> سياسة الخصوصية الخاصة بنا</a></string>
     <string name="coordinates_error">قيم الإحداثيات غير صالحة</string>
-    <string name="break_glass_error">لا يمكنك تسجيل TEIs من وحدات تنظيمية أخرى في هذا البرنامج لأنه محمي. \n اتصل بالمسؤول.</string>
     <string name="field_is_mandatory">هذا الحقل إلزامي</string>
     <string name="security_debugger_message">لأسباب أمنية ، لا يُسمح باستخدام هذه النسخة من التطبيق مع adb. الرجاء استخدام نسخة هذا التطبيق المخصصة للتدريب.</string>
 
-    <string name="customactivityoncrash_error_activity_error_occurred_explanation">للأسف! شيء ما لم يسير كما هو مخطط له.\n دعنا نعيدك إلى العمل.</string>
     <string name="customactivityoncrash_error_activity_restart_app">رجوع</string>
     <string name="customactivityoncrash_error_activity_close_app">إغلاق التطبيق</string>
     <string name="customactivityoncrash_error_activity_error_details">تفاصيل أكثر</string>
@@ -707,6 +718,16 @@
     <string name="error_init_session">لم نتمكن من بدء الجلسة مع المستخدم الخاص بك</string>
     <string name="enrollment_date_edition_warning">هناك أحداث مخطط لها لن تتم إعادة جدولتها</string>
     <string name="section_charts">المخططات البيانية</string>
+    <string name="navigation_list_view">عرض</string>
+    <string name="navigation_table_view">عرض جدول</string>
+    <string name="navigation_map_view">الخريطة</string>
+    <string name="navigation_analytics">التحليلات</string>
+    <string name="navigation_tasks">المهام</string>
+    <string name="navigation_programs">البرامج</string>
+    <string name="navigation_charts">المخططات البيانية</string>
+    <string name="navigation_notes">الملاحظات</string>
+    <string name="navigation_data_entry">إدخال البيانات</string>
+    <string name="navigation_tei_data">التفاصيل</string>
     <string name="show_bar_graph">عرض كشريط</string>
     <string name="show_line_graph">مشاهدة على شكل خطي</string>
     <string name="show_table_graph">عرض كجدول</string>
@@ -741,7 +762,6 @@
     <string name="filter_period_last_n_biweeks">آخر %dزوج اسابيع</string>
     <string name="section_feedback">التغذية الراجعة</string>
     <string name="section_indicators">المؤشرات</string>
-    <string name="camera_permission_denied">تم رفض إذن الكاميرا.\n تحتاج إلى تمكينها لاستخدام هذه الميزة.</string>
     <string name="value">القيمة</string>
     <string name="section_charts_indicators">الرسوم البيانية والمؤشرات</string>
     <string name="take_photo">التقط صورة</string>
@@ -761,6 +781,7 @@
     <string name="action_do_not_show_again">لا تظهر مرة أخرى</string>
     <string name="coordinate_feature_type_error">لا يمكن تعيين نوع الإحداثيات</string>
     <string name="filter_follow_up_label">تمت المتابعة %s</string>
+    <string name="wrong_date_format">لا يمكن تحليل %s كتاريخ</string>
     <string name="update_field_error">لا يمكن تحديث هذا الحقل. حاول مرة اخرى</string>
     <string name="available">متوفر</string>
     <string name="blocked_by_completion">هذه البيانات غير قابلة للتحرير لأنه تم تعليمها على أنها مكتملة</string>
@@ -771,9 +792,10 @@
     <string name="edition_orgunit_capture_scope">لا يمكنك تحرير البيانات من هذه الوحدة التنظيمية</string>
     <string name="reload_list">إعادة البحث</string>
     <string name="error_tei_online_search_title">البحث عبر الإتصال بالسيرفر عن طريق الإنترنت ارجع الرسالة التالية:</string>
+    <string name="program_rules_loop_warning_title">تحذير قواعد البرنامج</string>
+    <string name="granular_sync_refresh">إعادة التجديد</string>
     <string name="unknown_date">غير معروف</string>
     <string name="granular_sync_refresh_title">قم بتحديث كافة البيانات</string>
-    <string name="add_accout">إضافة حساب</string>
     <string name="delete_account">حذف الحساب</string>
     <string name="manage_accounts">إدارة الحسابات</string>
     <string name="main_menu_troubleshooting">استكشاف أخطاء التكوين وإصلاحها</string>
@@ -782,7 +804,7 @@
     <string name="troubleshooting_pass_rule_validation">لم يتم العثور على تحذيرات</string>
     <string name="troobleshooting_pass_rule_validation_title">كل شيء يبدو جيداً</string>
     <string name="not_saved">لم يتم حفظه</string>
-    <string name="review_message">تحتاج بعض الحقول إلى إطلاعك.\n هل تريد مراجعة النموذج؟</string>
+    <string name="review_message">بعض الحقول تحتاج إلى انتباهك.\nهل تريد مراجعة النموذج؟</string>
     <string name="search_loading_more">تحميل المزيد من النتائج</string>
     <string name="search_no_results_in_program">لا يوجد المزيد من النتائج لـ %s</string>
     <string name="search_outside_action">ابحث خارج هذا البرنامج</string>
@@ -796,10 +818,11 @@
     <string name="action_ok">موافق\!</string>
     <string name="init_search">ابدأ بحثًا للعثور على أي %s</string>
     <string name="search_or_create">يمكنك البحث أو إنشاء %s جديد</string>
-    <string name="missing_warning_fields_events">لديك بعض رسائل التحذير.\n هل تريد وضع علامة على هذا النموذج كمكتمل؟</string>
-    <string name="missing_error_fields_events">بعض الحقول بها أخطاء ولم يتم حفظها. \n هل تريد مراجعة النموذج؟</string>
+    <string name="missing_warning_fields_completed_events">لديك بعض الرسائل التحذيرية.</string>
+    <string name="missing_warning_fields_events">لديك بعض الرسائل التحذيرية.\nهل تريد وضع علامة \"مكتمل\" على هذا النموذج؟</string>
+    <string name="missing_error_fields_events">بعض الحقول بها أخطاء ولم يتم حفظها. \nهل تريد مراجعة النموذج؟</string>
     <string name="event_can_be_completed">هل تريد وضع علامة على هذا النموذج كمكتمل؟</string>
-    <string name="event_error_on_complete">لديك بعض رسائل الخطأ. \nهل تريد مراجعتها؟</string>
+    <string name="event_error_on_complete">لديك بعض رسائل الخطأ.\nهل تريد مراجعتها؟</string>
     <string name="changes_will_be_discarted">إذا قمت بالخروج الآن سيتم تجاهل التغييرات.</string>
     <string name="re_opened">أعيد فتحه</string>
     <string name="account_disable_title">الحساب معطل</string>
@@ -817,4 +840,72 @@
     <string name="sms_sync_not_sent">لم يتم إرسال الرسالة القصيرة.</string>
     <string name="sms_sync_opening_app">فتح تطبيق الرسائل القصيرة. لا تعدل الرسالة من فضلك.</string>
     <string name="sms_sync_manual_confirmation">في انتظار التأكيد اليدوي</string>
+    <string name="syncing_events">مزامنة الأحداث</string>
+    <string name="syncing_done">تمت المزامنة</string>
+    <string name="wrong_pin">دبوس خاطئ</string>
+    <string name="enrolledIn">مسجل في</string>
+    <string name="ownedBy">مملوكة من قبل</string>
+    <string name="sync_dialog_title_not_synced">المزامنة مطلوبة</string>
+    <string name="sync_dialog_title_error">خطأ في المزامنة</string>
+    <string name="sync_dialog_title_synced">متزامنة</string>
+    <string name="sync_dialog_title_warning">تحذير المزامنة</string>
+    <string name="sync_dialog_title_syncing">تزامن</string>
+    <string name="sync_dialog_message_not_synced_all">هل تريد إرسال جميع التغييرات التي أجريتها؟</string>
+    <string name="sync_dialog_message_synced_all">هل تريد التحقق من وجود تحديثات؟</string>
+    <string name="sync_dialog_action_send">إرسال</string>
+    <string name="sync_dialog_action_refresh">تحديث</string>
+    <string name="sync_dialog_action_not_now">ليس الان</string>
+    <plurals name="error_count_label">
+        <item quantity="zero">%s الأخطاء</item>
+        <item quantity="one">%s الخطأ</item>
+        <item quantity="two">%s الأخطاء</item>
+        <item quantity="few">%s الأخطاء</item>
+        <item quantity="many">%s الأخطاء</item>
+        <item quantity="other">%s الأخطاء</item>
+    </plurals>
+    <plurals name="warning_count_label">
+        <item quantity="zero">%s التحذيرات</item>
+        <item quantity="one">%s تحذير</item>
+        <item quantity="two">%s التحذيرات</item>
+        <item quantity="few">%s التحذيرات</item>
+        <item quantity="many">%s التحذيرات</item>
+        <item quantity="other">%s التحذيرات</item>
+    </plurals>
+    <string name="software_update">تحديث البرنامج</string>
+    <string name="remind_me_later">في وقت لاحق</string>
+    <string name="download_now">حمّل الآن</string>
+    <string name="check_for_updates">تحقق من وجود تحديثات</string>
+    <string name="checking_for_updates">التحقق من وجود تحديثات</string>
+    <string name="no_updates">لا توجد تحديثات جديدة</string>
+    <string name="app_version">إصدار التطبيق</string>
+    <string name="not_synced">غير متزامن</string>
+    <string name="sync_retry">إعادة محاولة المزامنة</string>
+    <string name="marked_follow_up">مُعلَّم للمتابعة</string>
+    <string name="registered_in">مسجل في</string>
+    <string name="view_only">العرض فقط</string>
+    <string name="skipped">تم تخطيه</string>
+    <string name="programs">البرامج</string>
+    <string name="sync_successful">تمت المزامنة بنجاح</string>
+    <string name="sync_warning">تحذير المزامنة</string>
+    <string name="sync_error">يحوي خطأ في المزامنة</string>
+    <string name="mark_follow_up">وضع علامة للمتابعة</string>
+    <string name="coordinates">الإحداثيات</string>
+    <string name="sync_offline_check_connection">يبدو أنك غير متصل بالإنترنت. يرجى التحقق من اتصالك</string>
+    <string name="schedule_next">الجدول الزمني التالي</string>
+    <string name="schedule">مجدول زمنياً</string>
+    <string name="scheduled_enter_event">تمت جدولته</string>
+    <string name="program_stage">مرحلة البرنامج</string>
+    <string name="event">حدث</string>
+    <string name="timeline">الجدول الزمني</string>
+    <string name="optional">اختياري</string>
+    <string name="show_more">إظهار المزيد</string>
+    <string name="show_less">إظهار أقل</string>
+    <string name="sync">حالة التزامن</string>
+    <string name="show_fields">إظهار الحقول</string>
+    <string name="hide_fields">إخفاء الحقول</string>
+    <string name="successful_sync">مزامنة ناجحة</string>
+    <string name="syncing_something">مزامنة %s ...</string>
+    <string name="show_description">إظهار الوصف</string>
+    <string name="hide_description">إخفاء الوصف</string>
+    <string name="use_password">استخدام كلمة المرور</string>
     </resources>

@@ -1,9 +1,9 @@
 package org.saudigitus.emis.ui.attendance2
 
+import android.util.Log
 import androidx.compose.ui.util.fastFilterNotNull
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.dhis2.commons.resources.ResourceManager
 import org.hisp.dhis.android.core.maintenance.D2Error
+import org.joda.time.format.ISODateTimeFormat.date
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.local.AttendanceRepository
 import org.saudigitus.emis.data.local.DataManager
@@ -38,7 +39,6 @@ import org.saudigitus.emis.utils.getOption
 import java.time.ZoneId
 import javax.inject.Inject
 
-@HiltViewModel
 class AttendanceViewModel @Inject constructor(
     private val repository: DataManager,
     private val attendanceRepository: AttendanceRepository,
@@ -163,6 +163,12 @@ class AttendanceViewModel @Inject constructor(
             _schoolCalendar.value = schoolCalendar
             _currentSchoolCalendar.value = currentSchoolCalendar
 
+            val canTakeAttendance = validateCalendar(
+                DateHelper.formatDate(System.currentTimeMillis()).orEmpty(),
+                schoolCalendar,
+                currentSchoolCalendar
+            )
+
             _uiState.value = AttendanceUiState.HasAttendance(
                 toolbarHeaders = ToolbarHeaders(
                     resourceManager.getString(R.string.attendance),
@@ -171,6 +177,7 @@ class AttendanceViewModel @Inject constructor(
                     ),
                 ),
                 infoCard = InfoCard(),
+                canTakeAttendance = canTakeAttendance,
             )
         }
     }
@@ -196,6 +203,8 @@ class AttendanceViewModel @Inject constructor(
             val currentState = uiState.value as? AttendanceUiState.HasAttendance ?: return@launch
             val toolbarHeaders = currentState.toolbarHeaders
             val currentButtonState = currentState.attendanceButtonState
+
+            val canTakeAttendance = validateCalendar(date, schoolCalendar.value, currentSchoolCalendar.value)
 
             val attendanceStatus = attendanceRepository.getAttendanceStatus(
                 currentState.program,
@@ -223,7 +232,7 @@ class AttendanceViewModel @Inject constructor(
                 toolbarHeaders = toolbarHeaders.copy(
                     subtitle = DateHelper.formatDateWithWeekDay(date)
                 ),
-                canTakeAttendance = validateCalendar(date, schoolCalendar.value, currentSchoolCalendar.value),
+                canTakeAttendance = canTakeAttendance,
                 selectedDate = date,
                 attendanceButtonState = updatedButtonState,
                 fieldsData = updatedFormData,
@@ -419,6 +428,7 @@ class AttendanceViewModel @Inject constructor(
     private fun saveAttendanceEvents() {
         viewModelScope.launch {
             val current = uiState.value as AttendanceUiState.HasAttendance
+            val currentButtonState = current.attendanceButtonState
 
             runCatching {
                 attendanceRepository.saveAttendance(
@@ -427,7 +437,12 @@ class AttendanceViewModel @Inject constructor(
                     attendanceEvents = current.attendanceButtonState.attendanceEvents
                 )
             }.onSuccess {
-                _uiState.value = current.copy(attendanceStep = ButtonStep.EDITING, displaySummary = false, execSync = true)
+                _uiState.value = current.copy(
+                    attendanceStep = ButtonStep.EDITING,
+                    attendanceButtonState = currentButtonState.copy(isEditing = false),
+                    displaySummary = false,
+                    execSync = true
+                )
                 loadAttendanceEventsByDate(current.selectedDate)
                 _snackbarEvent.emit(resourceManager.getString(R.string.attendance_saved))
                 _execSync.emit(true)
@@ -495,6 +510,7 @@ class AttendanceViewModel @Inject constructor(
                 attendanceButtonState = currentButtonState.copy(isEditing = false),
                 execSync = false,
                 displayReasonField = emptyMap(),
+                isAttendanceCompleted = false,
             )
             delay(10L)
             loadAttendanceEventsByDate(currentState.selectedDate)

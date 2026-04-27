@@ -15,6 +15,7 @@ import org.hisp.dhis.android.core.D2
 import org.saudigitus.emis.data.model.Auth
 import org.saudigitus.emis.data.model.app_config.EMISConfig
 import org.saudigitus.emis.utils.Constants
+import org.saudigitus.emis.utils.decodeJson
 import javax.inject.Inject
 
 class HttpClientHelper @Inject constructor(private val d2: D2) {
@@ -26,7 +27,7 @@ class HttpClientHelper @Inject constructor(private val d2: D2) {
                 .byKey().eq(Constants.AUTH_KEY)
                 .one().blockingGet()
 
-            EMISConfig.translateFromJson<Auth?>(datastore?.value())
+            EMISConfig.translateFromJson<Auth?>(decodeJson(datastore?.value()))
         }catch(_: Exception) {
             null
         }

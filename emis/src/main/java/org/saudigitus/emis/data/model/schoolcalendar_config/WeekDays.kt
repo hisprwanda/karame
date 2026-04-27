@@ -1,23 +1,23 @@
 package org.saudigitus.emis.data.model.schoolcalendar_config
 
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class WeekDays(
-    @JsonProperty("friday")
+    @SerializedName("friday")
     val friday: Boolean?,
-    @JsonProperty("monday")
+    @SerializedName("monday")
     val monday: Boolean?,
-    @JsonProperty("saturday")
+    @SerializedName("saturday")
     val saturday: Boolean?,
-    @JsonProperty("sunday")
+    @SerializedName("sunday")
     val sunday: Boolean?,
-    @JsonProperty("thursday")
+    @SerializedName("thursday")
     val thursday: Boolean?,
-    @JsonProperty("tuesday")
+    @SerializedName("tuesday")
     val tuesday: Boolean?,
-    @JsonProperty("wednesday")
+    @SerializedName("wednesday")
     val wednesday: Boolean?
 )
