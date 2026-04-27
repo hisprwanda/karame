@@ -454,19 +454,20 @@ class AttendanceViewModel @Inject constructor(
         currentSchoolCalendar: SchoolCalendar? = null,
     ): Boolean {
         val dateMillis = DateHelper.convertDateToMilliseconds(strDate)
-        val date = stringToLocalDate(DateHelper.formatDate(dateMillis)!!)
+        val formattedDate = DateHelper.formatDate(dateMillis) ?: return false
+        val date = stringToLocalDate(formattedDate)
         val today = System.currentTimeMillis()
 
         return if (schoolCalendar != null && currentSchoolCalendar != null) {
-            val startDate = currentSchoolCalendar.academicYear?.startDate
-            val endDate = currentSchoolCalendar.academicYear?.endDate
+            val startDate = currentSchoolCalendar.academicYear?.startDate ?: return false
+            val endDate = currentSchoolCalendar.academicYear?.endDate ?: return false
 
-            val startMillis = stringToLocalDate(startDate!!)
+            val startMillis = stringToLocalDate(startDate)
                 .atStartOfDay(ZoneId.systemDefault())
-                ?.toInstant()?.toEpochMilli()!!
-            val endMillis = stringToLocalDate(endDate!!)
+                ?.toInstant()?.toEpochMilli() ?: return false
+            val endMillis = stringToLocalDate(endDate)
                 .atStartOfDay(ZoneId.systemDefault())
-                ?.toInstant()?.toEpochMilli()!!
+                ?.toInstant()?.toEpochMilli() ?: return false
 
             val isValid = (
                 !DateHelper.isWeekend(date) && currentSchoolCalendar.weekDays?.saturday == false &&

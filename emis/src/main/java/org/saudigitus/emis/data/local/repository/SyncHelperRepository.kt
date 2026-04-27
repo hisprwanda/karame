@@ -45,6 +45,7 @@ class SyncHelperRepository @Inject constructor(
 
     fun cleanBasedOnEvents() {
         scope.launch(Dispatchers.IO) {
+            if (!d2.userModule().blockingIsLogged()) return@launch
             val transferredTrackers = getTransferredTeis()
                 .filter { it.type == TransferredType.TRACKER_ID }
                 .map { it.value }

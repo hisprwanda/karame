@@ -57,7 +57,6 @@ import org.saudigitus.emis.ui.components.Toolbar
 import org.saudigitus.emis.ui.components.ToolbarActionState
 import org.saudigitus.emis.ui.home.analytics.AnalyticsScreen
 import org.saudigitus.emis.ui.teis.FilterType
-import org.saudigitus.emis.utils.Constants.ABSENTEEISM
 import org.saudigitus.emis.utils.Constants.ATTENDANCE
 import org.saudigitus.emis.utils.Constants.PERFORMANCE
 
@@ -254,28 +253,6 @@ fun HomeUI(
                             enabled = uiState.infoCard.hasData(),
                             onClick = {
                                 onEvent(HomeUiEvent.NavTo("${AppRoutes.ATTENDANCE_ROUTE}/${uiState.school?.uid}"))
-                            },
-                        )
-                    }
-                }
-                if (uiState.hasModules(ABSENTEEISM)) {
-                    item {
-                        HomeItem(
-                            modifier = Modifier.fillMaxWidth(),
-                            icon = painterResource(R.drawable.s_calendar),
-                            label = stringResource(R.string.absenteeism),
-                            enabled = uiState.infoCard.hasData(),
-                            onClick = {
-                                onEvent(
-                                    HomeUiEvent.NavTo(
-                                        AppRoutes.absenteeismRoute(
-                                            uiState.academicYear?.code,
-                                            uiState.school?.uid,
-                                            uiState.grade?.code,
-                                            uiState.section?.code,
-                                        ),
-                                    ),
-                                )
                             },
                         )
                     }

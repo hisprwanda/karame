@@ -130,54 +130,6 @@ class MainActivity : FragmentActivity() {
                             )
                         }
                         composable(
-                            route = "${AppRoutes.ABSENTEEISM_ROUTE}/{ou}/{academicYear}/{grade}/{section}",
-                            arguments = listOf(
-                                navArgument("ou") {
-                                    type = NavType.StringType
-                                },
-                                navArgument("academicYear") {
-                                    type = NavType.StringType
-                                },
-                                navArgument("grade") {
-                                    type = NavType.StringType
-                                },
-                                navArgument("section") {
-                                    type = NavType.StringType
-                                },
-                            ),
-                        ) {
-                            Column(modifier = Modifier.fillMaxSize()) {
-                                Text(stringResource(R.string.unvailable_now))
-                            }
-                            /*val attendanceViewModel: AttendanceViewModel = koinViewModel()
-                            val infoCard by attendanceViewModel.infoCard.collectAsStateWithLifecycle()
-
-                            attendanceViewModel.setDefaults(
-                                stringResource(R.string.absenteeism),
-                                true
-                            )
-                            attendanceViewModel.setOptions(
-                                it.arguments?.getString("academicYear") ?: "",
-                                it.arguments?.getString("grade") ?: "",
-                                it.arguments?.getString("section") ?: "",
-                            )
-                            attendanceViewModel.setProgram(
-                                intent?.extras?.getString(Constants.PROGRAM_UID) ?: ""
-                            )
-                            attendanceViewModel.setInfoCard(viewModel.infoCard.collectAsStateWithLifecycle().value)
-                            attendanceViewModel.setOU(it.arguments?.getString("ou") ?: "")
-
-                            AttendanceScreen(
-                                navController,
-                                this@MainActivity.supportFragmentManager,
-                                attendanceViewModel,
-                                teiCardMapper,
-                                infoCard = infoCard,
-                                navController::navigateUp,
-                                ::syncProgram,
-                            )*/
-                        }
-                        composable(
                             route = "${AppRoutes.PERFORMANCE_ROUTE}/{ou}/{stage}/{dataElement}/{subjectName}",
                             arguments = listOf(
                                 navArgument("ou") {
