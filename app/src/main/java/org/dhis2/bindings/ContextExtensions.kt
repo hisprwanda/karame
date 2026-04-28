@@ -9,9 +9,9 @@ import org.dhis2.BuildConfig
 
 fun Context.buildInfo(): String =
     if (BuildConfig.BUILD_TYPE == "release") {
-        "v${BuildConfig.VERSION_NAME}"
+        "v${BuildConfig.SEMIS_VERSION}"
     } else {
-        "v${BuildConfig.VERSION_NAME} : ${BuildConfig.GIT_SHA} "
+        "v${BuildConfig.SEMIS_VERSION} : ${BuildConfig.GIT_SHA} "
     }
 
 fun Fragment.checkSMSPermission(

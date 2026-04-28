@@ -29,12 +29,20 @@
                 android:padding="10dp">
 
                 <TextView
+                    android:id="@+id/aboutSemis"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintStart_toStartOf="parent"
+                    android:text="@string/about_semis"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
                     android:id="@+id/aboutApp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     app:layout_constraintStart_toStartOf="parent"
                     android:text="@string/about_app"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toBottomOf="@id/aboutSemis" />
 
                 <TextView
                     android:id="@+id/appSDK"
@@ -45,14 +53,6 @@
                     app:layout_constraintTop_toBottomOf="@id/aboutApp" />
 
                 <TextView
-                    android:id="@+id/aboutSemis"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintStart_toStartOf="parent"
-                    android:text="@string/about_sdk"
-                    app:layout_constraintTop_toBottomOf="@id/appSDK" />
-
-                <TextView
                     android:id="@+id/aboutMore"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -60,7 +60,7 @@
                     android:layout_marginTop="15dp"
                     android:text="@string/about_more"
                     android:textColorLink="?colorPrimary"
-                    app:layout_constraintTop_toBottomOf="@id/aboutSemis" />
+                    app:layout_constraintTop_toBottomOf="@id/appSDK" />
 
                 <TextView
                     android:id="@+id/privacyPolicy"
