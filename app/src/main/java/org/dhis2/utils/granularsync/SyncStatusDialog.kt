@@ -25,6 +25,7 @@ import androidx.work.WorkInfo
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.snackbar.Snackbar
 import org.dhis2.App
 import org.dhis2.R
 import org.dhis2.bindings.checkSMSPermission
@@ -143,7 +144,16 @@ class SyncStatusDialog :
                                         },
                                 ),
                             onMainButtonClicked = {
-                                onSyncClick()
+                                if (networkUtils.isOnline()) {
+                                    onSyncClick()
+                                } else {
+                                    Snackbar.make(
+                                        this.rootView,
+                                        getString(org.saudigitus.emis.R.string.sync_offline_check_connection),
+                                        Snackbar.LENGTH_SHORT,
+                                    ).show()
+                                    dismiss()
+                                }
                             },
                             onSecondaryButtonClicked = {
                                 dismiss()

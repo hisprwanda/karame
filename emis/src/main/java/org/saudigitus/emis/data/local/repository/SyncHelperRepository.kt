@@ -190,15 +190,19 @@ class SyncHelperRepository @Inject constructor(
     }
 
     private suspend fun pruneNotOwnedTEs(trackers: List<String>) = withContext(Dispatchers.IO) {
-        trackers.forEach { tei ->
+        val ownershipConflicts = d2.importModule().trackerImportConflicts()
+            .byErrorCode().eq("E1102")
+            .blockingGet()
+
+        ownershipConflicts.forEach { tei ->
             d2.databaseAdapter().delete(
                 TrackedEntityInstanceTableInfo.TABLE_NAME,
-                "${TrackedEntityInstanceTableInfo.Columns.UID} = '$tei'",
+                "${TrackedEntityInstanceTableInfo.Columns.UID} = '${tei.trackedEntityInstance()}'",
             )
 
             d2.databaseAdapter().delete(
                 TrackerImportConflictTableInfo.TABLE_NAME,
-                "${TrackerImportConflictTableInfo.Columns.TRACKED_ENTITY_INSTANCE} = '$tei'",
+                "${TrackerImportConflictTableInfo.Columns.TRACKED_ENTITY_INSTANCE} = '${tei.trackedEntityInstance()}'",
             )
         }
     }

@@ -100,7 +100,7 @@ class AttendanceViewModel @Inject constructor(
             studentsIds = students.map { it.tei.uid() }
 
             loadStaticDependencies(program)
-            loadAttendanceEventsByDate()
+            loadAttendanceEventsByDate(selectedDate)
         }
     }
 
@@ -443,7 +443,7 @@ class AttendanceViewModel @Inject constructor(
                     displaySummary = false,
                     execSync = true
                 )
-                loadAttendanceEventsByDate(current.selectedDate)
+                loadAttendanceEventsByDate(selectedDate.ifEmpty { current.selectedDate })
                 _snackbarEvent.emit(resourceManager.getString(R.string.attendance_saved))
                 _execSync.emit(true)
             }.onFailure { error ->
@@ -513,7 +513,7 @@ class AttendanceViewModel @Inject constructor(
                 isAttendanceCompleted = false,
             )
             delay(10L)
-            loadAttendanceEventsByDate(currentState.selectedDate)
+            loadAttendanceEventsByDate(selectedDate.ifEmpty { currentState.selectedDate })
         }
     }
 }

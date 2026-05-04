@@ -151,6 +151,7 @@ class HomeRepositoryImpl(
             val dataSetInstance = d2.dataSetInstanceSummaries().firstOrNull()
 
             require(program != null || dataSetInstance != null) { NO_HOME_ITEM }
+            val isSEMIS = isSEMIS(program?.uid().orEmpty())
 
             when {
                 program?.programType() == ProgramType.WITH_REGISTRATION ->
@@ -160,7 +161,7 @@ class HomeRepositoryImpl(
                         program.access().data().write() == true,
                         program.trackedEntityType()?.uid() ?: "",
                         isStockUseCase = d2.isStockProgram(program.uid()),
-                        isSEMIS = isSEMIS(program.uid()),
+                        isSEMIS = isSEMIS,
                     )
 
                 program?.programType() == ProgramType.WITHOUT_REGISTRATION ->

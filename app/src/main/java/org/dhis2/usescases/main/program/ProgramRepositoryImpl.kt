@@ -126,6 +126,7 @@ internal class ProgramRepositoryImpl(
                         resourceManager.defaultEventLabel(),
                     )
                 val state = dhisProgramUtils.getProgramState(program)
+                val isSEMIS = runBlocking { isSEMIS(program.uid()) }
 
                 programViewModelMapper
                     .map(
@@ -137,7 +138,7 @@ internal class ProgramRepositoryImpl(
                         metadataIconData = metadataIconProvider(program.style(), SurfaceColor.Primary),
                     ).copy(
                         isStockUseCase = d2.isStockProgram(program.uid()),
-                        isSEMIS = runBlocking { isSEMIS(program.uid()) },
+                        isSEMIS = isSEMIS,
                     )
             }.toList()
             .toFlowable()

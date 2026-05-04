@@ -351,9 +351,9 @@ class DataManagerImpl
                         val transferred = getTransferredTeis(ou)
                         val dataValues = transferred.map { dataValue -> dataValue.value }
 
-                        if (!dataValues.contains(enrollment.trackedEntityInstance())) {
+                        //if (!dataValues.contains(enrollment.trackedEntityInstance())) {
                             transformations.transform(it, program, enrollment)
-                        } else null
+                        //} else null
                     }
                 }
         )
