@@ -294,8 +294,8 @@ class HomeViewModel
             }
             val updatedFilters = async { reloadFilters() }.await()
             viewModelState.update { it.copy(dataElementFilters = updatedFilters) }
+            invokeInFilters()
         }
-        invokeInFilters()
     }
 
     private fun setGrade(grade: DropdownItem?) {

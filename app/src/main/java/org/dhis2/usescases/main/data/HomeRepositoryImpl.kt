@@ -141,7 +141,9 @@ class HomeRepositoryImpl(
             .byKey().eq(Constants.KEY)
             .one().blockingGet()
 
-        val config = EMISConfig.fromJson(decodeJson(dataStore?.value())) ?: emptyList()
+        val config = EMISConfig.fromJson(decodeJson(dataStore?.value()))
+            ?: return@withContext false
+
         return@withContext config.find { it.program == program } != null
     }
 
@@ -161,7 +163,7 @@ class HomeRepositoryImpl(
                         program.access().data().write() == true,
                         program.trackedEntityType()?.uid() ?: "",
                         isStockUseCase = d2.isStockProgram(program.uid()),
-                        isSEMIS = isSEMIS,
+                        isSEMIS = true,
                     )
 
                 program?.programType() == ProgramType.WITHOUT_REGISTRATION ->

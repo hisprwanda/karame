@@ -126,7 +126,7 @@ internal class ProgramRepositoryImpl(
                         resourceManager.defaultEventLabel(),
                     )
                 val state = dhisProgramUtils.getProgramState(program)
-                val isSEMIS = runBlocking { isSEMIS(program.uid()) }
+                val isSEMIS = true
 
                 programViewModelMapper
                     .map(
