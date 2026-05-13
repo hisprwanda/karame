@@ -1,4 +1,4 @@
-rootProject.name = "dhis2-android-capture-app"
+rootProject.name = "karame"
 
 pluginManagement {
     repositories {
