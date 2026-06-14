@@ -32,6 +32,7 @@ fun AttendanceButton(
     key: String,
     modifier: Modifier = Modifier,
     state: AttendanceButtonState,
+    interactive: Boolean = true,
     onClick: (AttendanceButtonModel) -> Unit
 ) {
     if ((state.buttons.isEmpty() && !state.isLoading && !state.isEditing) ||
@@ -60,7 +61,7 @@ fun AttendanceButton(
                     onClick = {
                         onClick.invoke(item)
                     },
-                    enabled = item.enabled,
+                    enabled = item.enabled && interactive,
                     modifier = Modifier
                         .border(
                             width = (0.15).dp,

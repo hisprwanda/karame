@@ -6,7 +6,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.collectLatest
@@ -24,19 +26,22 @@ fun AttendanceScreen(
     teiCardMapper: TEICardMapper,
     students: List<SearchTeiModel>,
     onBack: () -> Unit,
-    sync: (refresh: (() -> Unit)?, offlineAction: (() -> Unit)?) -> Unit
+    sync: (refresh: (() -> Unit)?, offlineAction: (() -> Unit)?) -> Unit,
+    syncSilent: (refresh: (() -> Unit)?, offlineAction: (() -> Unit)?) -> Unit = sync,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val hasCachedData by viewModel.hasCachedData.collectAsStateWithLifecycle()
     val schoolCalendar by viewModel.schoolCalendar.collectAsStateWithLifecycle()
     val currentSchoolCalendar by viewModel.currentSchoolCalendar.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarIsError by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        viewModel.snackbarEvent.collectLatest { message ->
-            if (message != null) {
+        viewModel.snackbarEvent.collectLatest { event ->
+            if (event != null) {
+                snackbarIsError = event.isError
                 snackbarHostState.showSnackbar(
-                    message = message,
+                    message = event.message,
                     duration = SnackbarDuration.Short
                 )
             }
@@ -46,12 +51,15 @@ fun AttendanceScreen(
     LaunchedEffect(Unit) {
         viewModel.execSync.collectLatest { status ->
             if (status != null && status) {
-                sync.invoke(
+                viewModel.setSyncing(true)
+                syncSilent.invoke(
                     {
+                        viewModel.setSyncing(false)
                         snackbarHostState.currentSnackbarData?.dismiss()
                         viewModel.refresh()
                     },
                     {
+                        viewModel.setSyncing(false)
                         snackbarHostState.currentSnackbarData?.dismiss()
                         viewModel.refresh()
                     }
@@ -86,6 +94,7 @@ fun AttendanceScreen(
         teiCardMapper = teiCardMapper,
         students = students,
         snackbarHostState = snackbarHostState,
+        snackbarIsError = snackbarIsError,
         dateValidator = {
             viewModel.validateCalendar(
                 strDate = DateHelper.formatDate(it).orEmpty(),
@@ -97,12 +106,15 @@ fun AttendanceScreen(
             when (it) {
                 is AttendanceUiEvent.BackHandler -> navigationBack()
                 is AttendanceUiEvent.SyncHandler -> {
-                    sync.invoke(
+                    viewModel.setSyncing(true)
+                    syncSilent.invoke(
                         {
+                            viewModel.setSyncing(false)
                             snackbarHostState.currentSnackbarData?.dismiss()
                             viewModel.refresh()
                         },
                         {
+                            viewModel.setSyncing(false)
                             snackbarHostState.currentSnackbarData?.dismiss()
                             viewModel.refresh()
                         }

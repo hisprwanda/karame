@@ -87,7 +87,7 @@ class MainActivity : FragmentActivity() {
                                 viewModel = viewModel,
                                 navController = navController,
                                 navBack = { finish() },
-                                sync = ::syncProgram,
+                                sync = { syncProgramSilent() },
                             )
                         }
                         composable(AppRoutes.TEI_LIST_ROUTE) {
@@ -127,6 +127,7 @@ class MainActivity : FragmentActivity() {
                                 teis,
                                 navController::navigateUp,
                                 ::syncProgram,
+                                ::syncProgramSilent,
                             )
                         }
                         composable(
@@ -293,6 +294,32 @@ class MainActivity : FragmentActivity() {
                     }
                 }
             ).show()
+        } else {
+            Snackbar.make(
+                this.window.decorView.rootView,
+                getString(R.string.sync_offline_check_connection),
+                Snackbar.LENGTH_SHORT,
+            ).show()
+            offlineAction?.invoke()
+        }
+    }
+
+    private fun syncProgramSilent(
+        refresh: (() -> Unit)? = null,
+        offlineAction: (() -> Unit)? = null,
+    ) {
+        if (networkUtils.isOnline()) {
+            SyncDialog(
+                activity = this@MainActivity,
+                recordUid = viewModel.program.value,
+                syncContext = SyncContext.GlobalTrackerProgram(viewModel.program.value),
+            ).showSilent(
+                onComplete = {
+                    viewModel.refreshData()
+                    refresh?.invoke()
+                },
+                onOffline = offlineAction,
+            )
         } else {
             Snackbar.make(
                 this.window.decorView.rootView,

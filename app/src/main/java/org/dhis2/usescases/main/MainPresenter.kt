@@ -268,7 +268,10 @@ class MainPresenter(
     }
 
     fun onSyncAllClick() {
-        view.showGranularSync()
+        // Sync directly in the background instead of opening the "Sync Needed" dialog.
+        // This is the exact path the dialog runs for a global (ALL) sync.
+        workManagerController
+            .syncDataForWorker(Constants.DATA_NOW, Constants.INITIAL_SYNC)
     }
 
     fun blockSession() {

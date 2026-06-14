@@ -120,10 +120,15 @@ class AttendanceRepositoryImpl @Inject constructor(
                     .value(uid, primaryDataValue.first)
                     .blockingSet(primaryDataValue.second)
 
-                if (secondaryDataValue != null) {
-                    d2.trackedEntityModule().trackedEntityDataValues()
+                if (secondaryDataValue != null && secondaryDataValue.first.isNotEmpty()) {
+                    val reasonValueRepository = d2.trackedEntityModule().trackedEntityDataValues()
                         .value(uid, secondaryDataValue.first)
-                        .blockingSet(secondaryDataValue.second)
+
+                    if (secondaryDataValue.second.isNullOrEmpty()) {
+                        reasonValueRepository.blockingDeleteIfExist()
+                    } else {
+                        reasonValueRepository.blockingSet(secondaryDataValue.second)
+                    }
                 }
 
                 val repository = d2.eventModule().events().uid(uid)
@@ -140,6 +145,9 @@ class AttendanceRepositoryImpl @Inject constructor(
         programStage: String,
         attendanceEvents: List<AttendanceEventWithDecorator>
     ) {
+        val reasonDataElement = repository.getConfig(KEY)?.find { it.program == program }
+            ?.attendance?.absenceReason.orEmpty()
+
         attendanceEvents.forEach { attendanceEvent ->
             saveEvent(
                 event = attendanceEvent.event?.event,
@@ -153,7 +161,8 @@ class AttendanceRepositoryImpl @Inject constructor(
                         attendanceEvent.event?.value.orEmpty()
                     ),
                     "reasonDataElement" to Pair(
-                        attendanceEvent.event?.reasonDataElement.orEmpty(),
+                        attendanceEvent.event?.reasonDataElement?.takeIf { it.isNotEmpty() }
+                            ?: reasonDataElement,
                         attendanceEvent.event?.reasonOfAbsence
                     ),
                 ),

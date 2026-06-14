@@ -49,6 +49,7 @@ sealed class AttendanceUiState(
         val displayBulk: Boolean = false,
         val displaySummary: Boolean = false,
         val execSync: Boolean = false,
+        val isSyncing: Boolean = false,
     ) : AttendanceUiState(toolbarHeaders, infoCard, students) {
     }
 }

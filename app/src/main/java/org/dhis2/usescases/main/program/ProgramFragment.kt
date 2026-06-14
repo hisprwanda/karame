@@ -21,6 +21,7 @@ import org.dhis2.App
 import org.dhis2.R
 import org.dhis2.commons.sync.OnDismissListener
 import org.dhis2.commons.sync.SyncContext
+import org.dhis2.commons.sync.SyncDialog
 import org.dhis2.usescases.general.FragmentGlobalAbstract
 import org.dhis2.usescases.main.navigateTo
 import org.dhis2.usescases.main.toHomeItemData
@@ -78,7 +79,7 @@ class ProgramFragment :
                         programViewModel.onItemClick(it)
                     },
                     onGranularSyncClick = {
-                        showSyncDialog(it)
+                        syncProgramSilently(it)
                     },
                 )
             }
@@ -162,6 +163,25 @@ class ProgramFragment :
                         Snackbar.LENGTH_SHORT,
                     ).show()
             }.show(FRAGMENT_TAG)
+    }
+
+    /**
+     * Submits/syncs the program in the background without showing the "Sync Needed" bottom sheet.
+     * Reuses the same silent-sync path as attendance; refreshes the card state on completion.
+     */
+    private fun syncProgramSilently(program: ProgramUiModel) {
+        SyncDialog(
+            activity = requireActivity(),
+            recordUid = program.uid,
+            syncContext =
+                when (program.programType) {
+                    "WITH_REGISTRATION" -> SyncContext.GlobalTrackerProgram(program.uid)
+                    "WITHOUT_REGISTRATION" -> SyncContext.GlobalEventProgram(program.uid)
+                    else -> SyncContext.GlobalDataSet(program.uid)
+                },
+        ).showSilent(
+            onComplete = { programViewModel.updateProgramQueries() },
+        )
     }
 
     companion object {

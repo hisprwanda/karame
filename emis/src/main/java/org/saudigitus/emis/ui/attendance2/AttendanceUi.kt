@@ -1,6 +1,8 @@
 package org.saudigitus.emis.ui.attendance2
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,6 +75,7 @@ internal fun AttendanceUi(
     teiCardMapper: TEICardMapper,
     students: List<SearchTeiModel>,
     snackbarHostState: SnackbarHostState,
+    snackbarIsError: Boolean = true,
     dateValidator: (Long) -> Boolean,
     onEvent: (AttendanceUiEvent) -> Unit,
 ) {
@@ -87,12 +90,15 @@ internal fun AttendanceUi(
     }
 
     if ((uiState as? AttendanceUiState.HasAttendance)?.displaySummary == true) {
+        LaunchedEffect(Unit) {
+            delay(3000L)
+            onEvent(AttendanceUiEvent.DismissSummary)
+        }
         AttendanceSummaryDialog(
             title = stringResource(R.string.attendance_summary),
             data = uiState.attendanceSummary,
             themeColor = SurfaceColor.Primary,
-            onCancel = { onEvent(AttendanceUiEvent.DismissSummary) },
-            onDone = { onEvent(AttendanceUiEvent.SaveAttendance) },
+            showButtons = false,
         )
     }
 
@@ -124,10 +130,11 @@ internal fun AttendanceUi(
             ExtendedFloatingActionButton(
                 text = {
                     Text(
-                        text = if (uiState.attendanceStep == ButtonStep.EDITING) {
-                            stringResource(R.string.update)
-                        } else {
-                            stringResource(R.string.submit)
+                        text = when {
+                            uiState.isSyncing -> stringResource(R.string.syncing)
+                            uiState.attendanceStep != ButtonStep.EDITING -> stringResource(R.string.submit)
+                            uiState.attendanceButtonState.hasEvent() -> stringResource(R.string.update)
+                            else -> stringResource(R.string.start)
                         },
                         color = SurfaceColor.Primary,
                         style = LocalTextStyle.current.copy(
@@ -147,14 +154,16 @@ internal fun AttendanceUi(
                     )
                 },
                 onClick = {
-                    when (uiState.attendanceStep) {
-                        ButtonStep.HOLD_SAVING -> {
-                            onEvent(AttendanceUiEvent.AddStep(ButtonStep.SAVING))
-                        }
+                    if (!uiState.isSyncing) {
+                        when (uiState.attendanceStep) {
+                            ButtonStep.HOLD_SAVING -> {
+                                onEvent(AttendanceUiEvent.AddStep(ButtonStep.SAVING))
+                            }
 
-                        else -> {
-                            if (uiState.canTakeAttendance) {
-                                onEvent(AttendanceUiEvent.AddStep(ButtonStep.HOLD_SAVING))
+                            else -> {
+                                if (uiState.canTakeAttendance) {
+                                    onEvent(AttendanceUiEvent.AddStep(ButtonStep.HOLD_SAVING))
+                                }
                             }
                         }
                     }
@@ -169,10 +178,7 @@ internal fun AttendanceUi(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    containerColor = when {
-                        uiState.isAttendanceCompleted -> light_success
-                        else -> light_error
-                    },
+                    containerColor = if (snackbarIsError) light_error else light_success,
                     contentColor = Color.White,
                 ) {
                     Row(
@@ -181,10 +187,7 @@ internal fun AttendanceUi(
                     ) {
                         Icon(
                             painter = painterResource(
-                                when {
-                                    uiState.isAttendanceCompleted -> R.drawable.success_icon
-                                    else -> R.drawable.ic_error_outline
-                                }
+                                if (snackbarIsError) R.drawable.ic_error_outline else R.drawable.success_icon
                             ),
                             contentDescription = it.visuals.message,
                         )
@@ -313,6 +316,7 @@ internal fun AttendanceUi(
                                             key = student.tei.uid(),
                                             modifier = Modifier.padding(horizontal = 16.dp),
                                             state = uiState.attendanceButtonState,
+                                            interactive = !uiState.isSyncing,
                                             onClick = {
                                                 onEvent(
                                                     AttendanceUiEvent.AddAttendance(
@@ -330,7 +334,7 @@ internal fun AttendanceUi(
                                         AttendanceField(
                                             key = student.tei.uid(),
                                             field = uiState.fields.firstOrNull(),
-                                            enabled = !isInactive && uiState.attendanceStep != ButtonStep.EDITING,
+                                            enabled = !isInactive && uiState.attendanceStep != ButtonStep.EDITING && !uiState.isSyncing,
                                             fieldsData = uiState.fieldsData,
                                             onValueChange = { key, fieldUid, value ->
                                                 onEvent(

@@ -39,6 +39,11 @@ import org.saudigitus.emis.utils.getOption
 import java.time.ZoneId
 import javax.inject.Inject
 
+data class SnackbarMessage(
+    val message: String,
+    val isError: Boolean = true,
+)
+
 class AttendanceViewModel @Inject constructor(
     private val repository: DataManager,
     private val attendanceRepository: AttendanceRepository,
@@ -56,11 +61,11 @@ class AttendanceViewModel @Inject constructor(
     private val _hasCachedData = MutableStateFlow(false)
     val hasCachedData: StateFlow<Boolean> = _hasCachedData
 
-    private val _snackbarEvent = MutableSharedFlow<String?>(
+    private val _snackbarEvent = MutableSharedFlow<SnackbarMessage?>(
         replay = 0,
         extraBufferCapacity = 1
     )
-    val snackbarEvent: SharedFlow<String?> = _snackbarEvent
+    val snackbarEvent: SharedFlow<SnackbarMessage?> = _snackbarEvent
 
     private val _execSync = MutableSharedFlow<Boolean?>(
         replay = 0,
@@ -136,7 +141,8 @@ class AttendanceViewModel @Inject constructor(
             }
 
             is AttendanceUiEvent.DismissSummary -> {
-                setButtonStep(ButtonStep.HOLD_SAVING)
+                val s = _uiState.value as? AttendanceUiState.HasAttendance ?: return
+                _uiState.value = s.copy(displaySummary = false)
             }
 
             is AttendanceUiEvent.ClearAttendance -> {
@@ -238,6 +244,7 @@ class AttendanceViewModel @Inject constructor(
                 fieldsData = updatedFormData,
                 attendanceStatus = attendanceStatus,
                 attendanceSummary = updatedSummary,
+                displayReasonField = emptyMap(),
             )
         }
     }
@@ -304,14 +311,39 @@ class AttendanceViewModel @Inject constructor(
     private fun bulkAttendance(buttonModel: AttendanceButtonModel) {
         viewModelScope.launch {
             val currentState = uiState.value as AttendanceUiState.HasAttendance
+            _hasCachedData.value = true
 
-            currentState.students.forEach {
-                updateAttendanceEvent(
-                    it,
-                    buttonModel
+            // Apply every student's mark on a single accumulated state and write once.
+            // Updating each student through its own coroutine raced on uiState and dropped
+            // events for large classes, which then failed the "record for all" check.
+            var buttonState = currentState.attendanceButtonState
+            var displayReasonField = currentState.displayReasonField
+            var fieldsData = currentState.fieldsData
+
+            currentState.students.forEach { student ->
+                buttonState = attendanceRepository.updateAttendanceEvent(
+                    eventDate = currentState.selectedDate,
+                    tei = student,
+                    buttonState,
+                    buttonModel = buttonModel,
                 )
-                delay(10L)
+                displayReasonField = displayAbsenceReason(
+                    displayReasonField,
+                    student.tei.uid().orEmpty(),
+                    buttonModel.key == Constants.ABSENT,
+                )
+                fieldsData = removeFromFormFieldData(
+                    student.tei.uid().orEmpty(),
+                    fieldsData,
+                )
             }
+
+            _uiState.value = currentState.copy(
+                attendanceButtonState = buttonState,
+                fieldsData = fieldsData,
+                displayReasonField = displayReasonField,
+                attendanceSummary = attendanceRepository.attendanceSummary(buttonState),
+            )
         }
     }
 
@@ -404,13 +436,23 @@ class AttendanceViewModel @Inject constructor(
 
             val hasInvalidData = hasInvalidData(currentButtonState)
             if (step == ButtonStep.SAVING && hasInvalidData) {
-                _snackbarEvent.emit(resourceManager.getString(R.string.select_reason_for_all))
+                _snackbarEvent.emit(
+                    SnackbarMessage(
+                        resourceManager.getString(R.string.select_reason_for_all),
+                        isError = true,
+                    )
+                )
                 return@launch
             }
 
             val isCompleted = attendanceRepository.isAttendanceCompleted(currentState.students, currentButtonState)
             if (step == ButtonStep.SAVING && !isCompleted) {
-                _snackbarEvent.emit(resourceManager.getString(R.string.you_must_record_for_all))
+                _snackbarEvent.emit(
+                    SnackbarMessage(
+                        resourceManager.getString(R.string.you_must_record_for_all),
+                        isError = true,
+                    )
+                )
                 return@launch
             }
 
@@ -420,8 +462,15 @@ class AttendanceViewModel @Inject constructor(
                     isEditing = step != ButtonStep.EDITING
                 ),
                 displaySummary = step == ButtonStep.SAVING,
-                isAttendanceCompleted = isCompleted
+                isAttendanceCompleted = isCompleted,
+                // Lock editing the instant Submit is accepted, before the (slow for large
+                // classes) save runs. Cleared on sync completion / offline / save failure.
+                isSyncing = step == ButtonStep.SAVING,
             )
+
+            if (step == ButtonStep.SAVING) {
+                saveAttendanceEvents()
+            }
         }
     }
 
@@ -440,12 +489,17 @@ class AttendanceViewModel @Inject constructor(
                 _uiState.value = current.copy(
                     attendanceStep = ButtonStep.EDITING,
                     attendanceButtonState = currentButtonState.copy(isEditing = false),
-                    displaySummary = false,
+                    displaySummary = true,
                     execSync = true
                 )
                 loadAttendanceEventsByDate(selectedDate.ifEmpty { current.selectedDate })
-                _snackbarEvent.emit(resourceManager.getString(R.string.attendance_saved))
                 _execSync.emit(true)
+                _snackbarEvent.emit(
+                    SnackbarMessage(
+                        resourceManager.getString(R.string.attendance_saved),
+                        isError = false,
+                    )
+                )
             }.onFailure { error ->
                 val friendlyMessage = when (error) {
                     is D2Error -> {
@@ -459,7 +513,8 @@ class AttendanceViewModel @Inject constructor(
                         .getString(R.string.error_unexpected)
                 }
 
-                _snackbarEvent.emit(friendlyMessage)
+                _uiState.value = current.copy(displaySummary = false, isSyncing = false)
+                _snackbarEvent.emit(SnackbarMessage(friendlyMessage, isError = true))
             }
         }
     }
@@ -497,6 +552,11 @@ class AttendanceViewModel @Inject constructor(
         } else {
             dateMillis <= today
         }
+    }
+
+    fun setSyncing(syncing: Boolean) {
+        val currentState = _uiState.value as? AttendanceUiState.HasAttendance ?: return
+        _uiState.value = currentState.copy(isSyncing = syncing)
     }
 
     fun refresh() {

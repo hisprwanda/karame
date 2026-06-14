@@ -594,7 +594,7 @@ private fun stateAdditionalInfoItem(state: State) =
             when (state) {
                 State.TO_POST,
                 State.TO_UPDATE,
-                -> stringResource(id = R.string.not_synced)
+                -> stringResource(id = R.string.not_submitted)
 
                 State.ERROR -> stringResource(id = R.string.sync_error_title)
                 State.WARNING -> stringResource(id = R.string.sync_warning)
@@ -637,7 +637,7 @@ private fun ProvideSyncButton(
             State.TO_POST,
             State.TO_UPDATE,
             -> {
-                stringResource(R.string.sync)
+                stringResource(R.string.submit_attendance)
             }
 
             State.ERROR,

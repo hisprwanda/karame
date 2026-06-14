@@ -139,8 +139,9 @@ fun AttendanceSummaryDialog(
     data: List<Summary>,
     themeColor: Color,
     disableActions: Boolean = false,
-    onCancel: () -> Unit,
-    onDone: () -> Unit,
+    showButtons: Boolean = true,
+    onCancel: () -> Unit = {},
+    onDone: () -> Unit = {},
 ) {
     AlertDialogTemplate {
         Spacer(modifier = Modifier.height(16.dp))
@@ -181,18 +182,22 @@ fun AttendanceSummaryDialog(
                 )
             }
         }
-        Divider(
-            modifier = Modifier.fillMaxWidth(),
-            color = Color.LightGray.copy(.75f),
-            thickness = .5.dp,
-        )
-        ActionButtons(
-            modifier = Modifier.align(Alignment.End),
-            contentColor = themeColor,
-            disableActions = disableActions,
-            onCancel = onCancel,
-            onDone = onDone,
-        )
+        if (showButtons) {
+            Divider(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.LightGray.copy(.75f),
+                thickness = .5.dp,
+            )
+            ActionButtons(
+                modifier = Modifier.align(Alignment.End),
+                contentColor = themeColor,
+                disableActions = disableActions,
+                onCancel = onCancel,
+                onDone = onDone,
+            )
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
 
