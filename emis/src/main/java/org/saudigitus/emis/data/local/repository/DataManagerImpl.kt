@@ -98,18 +98,12 @@ class DataManagerImpl
     ): Unit =
         withContext(Dispatchers.IO) {
             try {
-                val oldEvent = eventUid(
+                val uid = eventUid(
                     attendance.tei,
                     program,
                     programStage,
                     attendance.date,
-                )
-
-                if (!oldEvent.isNullOrEmpty()) {
-                    d2.eventModule().events().uid(oldEvent).blockingDeleteIfExist()
-                }
-
-                val uid = createEventProjection(
+                ) ?: createEventProjection(
                     attendance.enrollment,
                     ou,
                     program,
@@ -120,13 +114,9 @@ class DataManagerImpl
                     .value(uid, attendance.dataElement)
                     .blockingSet(attendance.value)
 
-                if (attendance.reasonDataElement != null && attendance.reasonOfAbsence != null) {
-                    attendance.reasonOfAbsence.let {
-                        if (it.isNotEmpty() && it.isNotBlank()) {
-                            d2.trackedEntityModule().trackedEntityDataValues()
-                                .value(uid, attendance.reasonDataElement).blockingSet(it)
-                        }
-                    }
+                if (attendance.reasonDataElement != null) {
+                    d2.trackedEntityModule().trackedEntityDataValues()
+                        .value(uid, attendance.reasonDataElement).blockingSet(attendance.reasonOfAbsence)
                 }
 
                 val repository = d2.eventModule().events().uid(uid)

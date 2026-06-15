@@ -210,6 +210,8 @@ class AttendanceViewModel @Inject constructor(
             val toolbarHeaders = currentState.toolbarHeaders
             val currentButtonState = currentState.attendanceButtonState
 
+            _uiState.value = currentState.copy(displayReasonField = emptyMap())
+
             val canTakeAttendance = validateCalendar(date, schoolCalendar.value, currentSchoolCalendar.value)
 
             val attendanceStatus = attendanceRepository.getAttendanceStatus(
