@@ -4,6 +4,7 @@ import dagger.Module
 import dagger.Provides
 import org.dhis2.commons.di.dagger.PerFragment
 import org.dhis2.commons.featureconfig.data.FeatureConfigRepository
+import org.dhis2.commons.filters.FilterManager
 import org.dhis2.commons.filters.data.FilterPresenter
 import org.dhis2.commons.matomo.MatomoAnalyticsController
 import org.dhis2.commons.resources.ColorUtils
@@ -16,8 +17,9 @@ import org.dhis2.data.service.SyncStatusController
 import org.hisp.dhis.android.core.D2
 
 @Module
-class ProgramModule(private val view: ProgramView) {
-
+class ProgramModule(
+    private val view: ProgramView,
+) {
     @Provides
     @PerFragment
     internal fun programViewModelFactory(
@@ -25,17 +27,20 @@ class ProgramModule(private val view: ProgramView) {
         dispatcherProvider: DispatcherProvider,
         featureConfigRepository: FeatureConfigRepository,
         matomoAnalyticsController: MatomoAnalyticsController,
+        filterManager: FilterManager,
         syncStatusController: SyncStatusController,
-    ): ProgramViewModelFactory {
-        return ProgramViewModelFactory(
+        schedulerProvider: SchedulerProvider,
+    ): ProgramViewModelFactory =
+        ProgramViewModelFactory(
             view,
             programRepository,
             featureConfigRepository,
             dispatcherProvider,
             matomoAnalyticsController,
+            filterManager,
             syncStatusController,
+            schedulerProvider,
         )
-    }
 
     @Provides
     @PerFragment
@@ -46,8 +51,8 @@ class ProgramModule(private val view: ProgramView) {
         schedulerProvider: SchedulerProvider,
         colorUtils: ColorUtils,
         metadataIconProvider: MetadataIconProvider,
-    ): ProgramRepository {
-        return ProgramRepositoryImpl(
+    ): ProgramRepository =
+        ProgramRepositoryImpl(
             d2,
             filterPresenter,
             dhisProgramUtils,
@@ -55,11 +60,4 @@ class ProgramModule(private val view: ProgramView) {
             metadataIconProvider,
             schedulerProvider,
         )
-    }
-
-    @Provides
-    @PerFragment
-    fun provideAnimations(): ProgramAnimation {
-        return ProgramAnimation()
-    }
 }

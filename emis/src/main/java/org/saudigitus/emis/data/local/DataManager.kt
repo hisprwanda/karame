@@ -5,6 +5,7 @@ import org.hisp.dhis.android.core.dataelement.DataElement
 import org.saudigitus.emis.data.model.app_config.EMISConfigItem
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.Subject
+import org.saudigitus.emis.data.model.TransferredTei
 import org.saudigitus.emis.data.model.app_config.ProgramStages
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
 import org.saudigitus.emis.data.model.schoolcalendar_config.SchoolCalendarConfig
@@ -19,6 +20,14 @@ interface DataManager {
         programStage: String,
         attendance: AttendanceEntity,
     )
+
+    suspend fun save(
+        ou: String,
+        program: String,
+        programStage: String,
+        attendances: List<AttendanceEntity>,
+    )
+
     suspend fun getConfig(id: String): List<EMISConfigItem>?
     suspend fun getTrackedEntityType(program: String): String?
 
@@ -46,6 +55,8 @@ interface DataManager {
 
     suspend fun getDataElement(uid: String): DataElement?
 
+    suspend fun getTransferredTeis(orgUnit: String): List<TransferredTei>
+
     fun getTeisBy(
         ou: String,
         program: String,
@@ -64,6 +75,8 @@ interface DataManager {
     ): List<AttendanceEntity>
 
     suspend fun deleteEvent(tei: String, enrollment: String, eventDate: String)
+
+    suspend fun deleteAllEvents(teis: List<String>, eventDate: String)
 
     suspend fun geTeiByAttendanceStatus(
         ou: String,

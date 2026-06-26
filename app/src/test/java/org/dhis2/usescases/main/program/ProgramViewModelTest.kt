@@ -2,6 +2,9 @@ package org.dhis2.usescases.main.program
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import io.reactivex.Flowable
+import io.reactivex.processors.FlowableProcessor
+import io.reactivex.processors.PublishProcessor
+import io.reactivex.schedulers.TestScheduler
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -9,12 +12,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.setMain
 import org.dhis2.commons.featureconfig.data.FeatureConfigRepository
+import org.dhis2.commons.filters.FilterManager
 import org.dhis2.commons.matomo.MatomoAnalyticsController
 import org.dhis2.commons.viewmodel.DispatcherProvider
+import org.dhis2.data.schedulers.TestSchedulerProvider
 import org.dhis2.data.service.SyncStatusController
 import org.dhis2.data.service.SyncStatusData
-import org.dhis2.ui.MetadataIconData
-import org.dhis2.ui.toColor
+import org.dhis2.mobile.commons.extensions.toColor
+import org.dhis2.mobile.commons.model.MetadataIconData
 import org.dhis2.utils.MainCoroutineScopeRule
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.mobile.ui.designsystem.component.ImageCardData
@@ -31,7 +36,6 @@ import java.util.Date
 
 @ExperimentalCoroutinesApi
 class ProgramViewModelTest {
-
     @get:Rule
     val instantExecutorRule = InstantTaskExecutorRule()
 
@@ -43,43 +47,49 @@ class ProgramViewModelTest {
     private val view: ProgramView = mock()
     private val programRepository: ProgramRepository = mock()
     private val matomoAnalyticsController: MatomoAnalyticsController = mock()
+    private val filterManager: FilterManager = mock()
+    private val schedulerProvider: TestSchedulerProvider = TestSchedulerProvider(TestScheduler())
     private val syncStatusController: SyncStatusController = mock()
     private val testingDispatcher = UnconfinedTestDispatcher()
-    private val featureConfigRepository: FeatureConfigRepository = mock {
-        on { isFeatureEnable(any()) } doReturn false
-    }
-    private val dispatcherProvider = object : DispatcherProvider {
-        override fun io(): CoroutineDispatcher {
-            return testingDispatcher
+    private val featureConfigRepository: FeatureConfigRepository =
+        mock {
+            on { isFeatureEnable(any()) } doReturn false
         }
+    private val dispatcherProvider =
+        object : DispatcherProvider {
+            override fun io(): CoroutineDispatcher = testingDispatcher
 
-        override fun computation(): CoroutineDispatcher {
-            return testingDispatcher
-        }
+            override fun computation(): CoroutineDispatcher = testingDispatcher
 
-        override fun ui(): CoroutineDispatcher {
-            return testingDispatcher
+            override fun ui(): CoroutineDispatcher = testingDispatcher
         }
-    }
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testingDispatcher)
-        presenter = ProgramViewModel(
-            view,
-            programRepository,
-            featureConfigRepository,
-            dispatcherProvider,
-            matomoAnalyticsController,
-            syncStatusController,
-        )
+        presenter =
+            ProgramViewModel(
+                view,
+                programRepository,
+                featureConfigRepository,
+                dispatcherProvider,
+                matomoAnalyticsController,
+                filterManager,
+                syncStatusController,
+                schedulerProvider,
+            )
     }
 
     @Test
     fun `Should initialize program list`() {
         val programs = listOf(programViewModel())
         val programsFlowable = Flowable.just(programs)
+        val filterProcessor: FlowableProcessor<FilterManager> = PublishProcessor.create()
+
         val syncStatusData = SyncStatusData(true)
+        val filterManagerFlowable = Flowable.just(filterManager).startWith(filterProcessor)
+
+        whenever(filterManager.asFlowable()) doReturn filterManagerFlowable
 
         whenever(
             syncStatusController.observeDownloadProcess(),
@@ -125,57 +135,61 @@ class ProgramViewModelTest {
         assertTrue(presenter.disposable.size() == 0)
     }
 
-    private fun programViewModel(): ProgramUiModel {
-        return ProgramUiModel(
-            "uid",
-            "displayName",
-            MetadataIconData(
-                imageCardData = ImageCardData.IconCardData(
-                    "",
-                    "",
-                    "ic_home_positive",
-                    "#84FFFF".toColor(),
+    private fun programViewModel(): ProgramUiModel =
+        ProgramUiModel(
+            uid = "uid",
+            title = "displayName",
+            metadataIconData =
+                MetadataIconData(
+                    imageCardData =
+                        ImageCardData.IconCardData(
+                            "",
+                            "",
+                            "ic_home_positive",
+                            "#84FFFF".toColor(),
+                        ),
+                    color = "#84FFFF".toColor(),
                 ),
-                color = "#84FFFF".toColor(),
-            ),
-            1,
-            "type",
-            "typeName",
-            "programType",
-            "description",
+            count = 1,
+            type = "type",
+            typeName = "typeName",
+            programType = "programType",
+            description = "description",
             onlyEnrollOnce = true,
             accessDataWrite = true,
             state = State.SYNCED,
             downloadState = ProgramDownloadState.NONE,
-            stockConfig = null,
+            isStockUseCase = false,
             lastUpdated = Date(),
+            filtersAreActive = false,
         )
-    }
 
-    private fun dataSetViewModel(): ProgramUiModel {
-        return ProgramUiModel(
-            "uid",
-            "displayName",
-            MetadataIconData(
-                imageCardData = ImageCardData.IconCardData(
-                    "",
-                    "",
-                    "ic_home_positive",
-                    "#84FFFF".toColor(),
+    private fun dataSetViewModel(): ProgramUiModel =
+        ProgramUiModel(
+            uid = "uid",
+            title = "displayName",
+            metadataIconData =
+                MetadataIconData(
+                    imageCardData =
+                        ImageCardData.IconCardData(
+                            "",
+                            "",
+                            "ic_home_positive",
+                            "#84FFFF".toColor(),
+                        ),
+                    color = "#84FFFF".toColor(),
                 ),
-                color = "#84FFFF".toColor(),
-            ),
-            1,
-            "type",
-            "typeName",
-            "",
-            "description",
+            count = 1,
+            type = "type",
+            typeName = "typeName",
+            programType = "",
+            description = "description",
             onlyEnrollOnce = true,
             accessDataWrite = true,
             state = State.SYNCED,
             downloadState = ProgramDownloadState.NONE,
-            stockConfig = null,
+            isStockUseCase = false,
             lastUpdated = Date(),
+            filtersAreActive = false,
         )
-    }
 }

@@ -19,18 +19,36 @@ import org.saudigitus.emis.ui.components.DropdownState
 import org.saudigitus.emis.ui.form.Field
 import org.saudigitus.emis.ui.form.FormData
 import org.saudigitus.emis.ui.form.FormField
+import org.saudigitus.emis.ui.form.attendance.models.FormFieldData
+import org.saudigitus.emis.ui.form.attendance.models.FormFieldState
 import org.saudigitus.emis.ui.teis.FilterType
+import java.sql.Date
 
 fun D2.eventsWithTrackedDataValues(
     ou: String,
     program: String,
     stage: String,
+    tei: String,
 ): List<Event> = eventModule().events()
     .byOrganisationUnitUid().eq(ou)
     .byProgramUid().eq(program)
     .byProgramStageUid().eq(stage)
+    .byTrackedEntityInstanceUids(listOf(tei))
     .byDeleted().isFalse
     .withTrackedEntityDataValues()
+    .blockingGet()
+
+fun D2.eventsWithTrackedDataValuesByDate(
+    program: String,
+    stage: String,
+    date: String? = DateHelper.formatDate(System.currentTimeMillis())
+): Event? = eventModule().events()
+    .byProgramUid().eq(program)
+    .byProgramStageUid().eq(stage)
+    .byEventDate().eq(Date.valueOf(date))
+    .byDeleted().isFalse
+    .withTrackedEntityDataValues()
+    .one()
     .blockingGet()
 
 fun D2.optionByOptionSet(
@@ -131,9 +149,21 @@ fun List<AttendanceEntity>.getReasonByTei(tei: String) =
 fun  List<FormData>.isVisible(tei: String) =
     this.any { it.tei == tei }
 
+fun  List<FormFieldData>.hasStudent(tei: String) =
+    this.any { it.tei == tei }
 
 fun FormField.getOption(reason: String): org.saudigitus.emis.data.model.Option {
     val option =  this.options?.find { it.code == reason }
+
+    return org.saudigitus.emis.data.model.Option(
+        uid = option?.uid.orEmpty(),
+        code = option?.code,
+        displayName = option?.displayName,
+    )
+}
+
+fun FormFieldState.getOption(reason: String): org.saudigitus.emis.data.model.Option {
+    val option =  this.optionSet?.find { it.code == reason }
 
     return org.saudigitus.emis.data.model.Option(
         uid = option?.uid.orEmpty(),

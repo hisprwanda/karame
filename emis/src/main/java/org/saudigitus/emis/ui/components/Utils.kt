@@ -11,19 +11,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.HideSource
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -48,8 +47,6 @@ import org.saudigitus.emis.ui.theme.dark_warning
 import org.saudigitus.emis.ui.theme.light_error
 import org.saudigitus.emis.ui.theme.light_info
 import org.saudigitus.emis.utils.DateHelper
-import java.time.LocalDate
-import java.time.ZoneId
 
 @Composable
 fun NoResults(
@@ -142,6 +139,12 @@ fun CustomDatePicker(
                 state = datePickerState,
                 title = {},
                 showModeToggle = false,
+                colors = DatePickerDefaults.colors(
+                    containerColor = Color.White,
+                    todayDateBorderColor = Color.Unspecified,
+                    selectedDayContainerColor = Color(0xFF2C98F0),
+                    selectedYearContainerColor = Color(0xFF2C98F0),
+                ),
             )
         }
     }

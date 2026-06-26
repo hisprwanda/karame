@@ -6,7 +6,7 @@
     <string name="back">Back</string>
     <string name="cls">Class...</string>
     <string name="grade">Grade...</string>
-    <string name="school">School...</string>
+    <string name="school">Class...</string>
     <string name="academic_year">Academic year...</string>
     <string name="search_no_results">There are no results for this search</string>
     <string name="start_search">Select filters to list</string>
@@ -21,7 +21,7 @@
     <string name="emptyFavorites">Please select your favourite Grades and classes</string>
     <string name="reset">Reset</string>
     <string name="attendance_summary">Attendance summary</string>
-    <string name="attendance_saved">Attendance saved sucessful</string>
+    <string name="attendance_saved">Attendance submitted successfully</string>
     <string name="select_term">Select term</string>
     <string name="absenteeism">Absenteeism</string>
     <string name="performance">Performance</string>
@@ -30,10 +30,10 @@
     <string name="marks_saved">Performance saved successfully</string>
     <string name="bulk_assing">Bulk assign</string>
     <string name="marked_follow_up">Marked for follow-up</string>
-    <string name="sync_retry">Retry sync</string>
+    <string name="sync_retry">Retry downloading data</string>
     <string name="not_synced">Not synced</string>
     <string name="syncing">Synchronizing...</string>
-    <string name="sync_error_title">Sync Error</string>
+    <string name="sync_error_title">Download Error</string>
     <string name="sync_error_text">An error has occurred during synchronisation. Please retry.</string>
     <string name="sync_incomplete_error_text">Sync finished but we did not receive server confirmation for all records. Those record are still marked as "offline" in the App. We recommend to retry the synchronization.</string>
     <string name="metadata_sync_error">FAIL: Something went wrong in the sync process. If you have connection please try again. If the error persist, contact your administrator.</string>
@@ -60,8 +60,16 @@
     <string name="sync_dialog_action_not_now">Not now</string>
     <string name="enrolledIn">Enrolled in:</string>
     <string name="programs">Programs:</string>
-    <string name="sync_offline_check_connection">Looks like you\\\'re offline. Please check you connection</string>
+    <string name="sync_offline_check_connection">Looks like you\'re offline. Please check your connection. Sync once you\'re online</string>
     <string name="none">None</string>
     <string name="dowload_teis">Sync %s</string>
     <string name="no_attendance_school_days">Attendance is only available on school days. Please select a valid school day.</string>
+    <string name="start">Start</string>
+    <string name="submit">Submit</string>
+    <string name="uploading">Uploading</string>
+    <string name="saved_locally">Saved locally</string>
+    <string name="upload_failed_saved_locally">Couldn\'t upload to the server. Saved on this device — we\'ll retry when you\'re online.</string>
+    <string name="reminder_to_sync">Note: Click sync (🔄️) on top right corner of screen to submit data</string>
+    <string name="you_must_record_for_all">You must record attendance for all students</string>
+    <string name="unvailable_now">Unavailable Now...</string>
 </resources>

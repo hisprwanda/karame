@@ -15,14 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.dhis2.ui.theme.colorPrimary
+import org.hisp.dhis.mobile.ui.designsystem.theme.SurfaceColor
 
 @Composable
 fun AttendanceRate(
     title: String,
     content: String,
     modifier: Modifier = Modifier,
-    indicatorColor: Color = colorPrimary.copy(0.2f)
+    indicatorColor: Color = SurfaceColor.Primary.copy(0.2f)
 ) {
     Card(
         modifier = modifier,

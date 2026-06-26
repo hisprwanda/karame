@@ -16,36 +16,23 @@ const val ENROLLMENT_UID = "ENROLLMENT_UID"
 const val PROGRAM_STAGE_UID = "PROGRAM_STAGE_UID"
 
 const val PROGRAM_TB_UID = "ur1Edk5Oe2n"
-const val PROGRAM_XX_TRACKER_UID = "U5KybNCtA3E"
-const val EVENT_DETAILS_UID = "oPCuUeDGaIu"
+const val ANTENATAL_CARE_PROGRAM_UID = "lxAQ7Zs9VYR"
+const val ANTENATAL_CARE_EVENT_UID = "ohAH6BXIMad"
 const val EVENT_TO_SHARE_UID = "y0xoVIzBpnL"
 const val TEI_EVENT_TO_DELETE_UID = "foc5zag6gbE"
 const val ENROLLMENT_EVENT_DELETE_UID = "SolDyMgW3oc"
 const val PROGRAM_STAGE_TO_SHARE = "EPEcjy3FWmI"
-const val TEI_TO_UPDATE_UID = "LxMVYhJm3Jp"
-const val ENROLLMENT_TO_UPDATE_UID = "awZ5RHoJin5"
 
 fun prepareEventDetailsIntentAndLaunchActivity(rule: LazyActivityScenarioRule<EventCaptureActivity>) {
     Intent(
         ApplicationProvider.getApplicationContext(),
         EventCaptureActivity::class.java,
     ).apply {
-        putExtra(PROGRAM_UID, PROGRAM_XX_TRACKER_UID)
-        putExtra(EVENT_UID, EVENT_DETAILS_UID)
+        putExtra(PROGRAM_UID, ANTENATAL_CARE_PROGRAM_UID)
+        putExtra(EVENT_UID, ANTENATAL_CARE_EVENT_UID)
         putExtra(Constants.EVENT_MODE, EventMode.CHECK)
 
     }.also { rule.launch(it) }
-}
-
-fun prepareEventToDeleteIntentAndLaunchActivity(ruleTeiDashboard: LazyActivityScenarioRule<TeiDashboardMobileActivity>) {
-    Intent(
-        ApplicationProvider.getApplicationContext(),
-        TeiDashboardMobileActivity::class.java,
-    ).apply {
-        putExtra(PROGRAM_UID, PROGRAM_TB_UID)
-        putExtra(TEI_UID, TEI_EVENT_TO_DELETE_UID)
-        putExtra(ENROLLMENT_UID, ENROLLMENT_EVENT_DELETE_UID)
-    }.also { ruleTeiDashboard.launch(it) }
 }
 
 fun prepareEventToShareIntentAndLaunchActivity(ruleEventDetail: LazyActivityScenarioRule<EventInitialActivity>) {
@@ -57,15 +44,4 @@ fun prepareEventToShareIntentAndLaunchActivity(ruleEventDetail: LazyActivityScen
         putExtra(EVENT_UID, EVENT_TO_SHARE_UID)
         putExtra(PROGRAM_STAGE_UID, PROGRAM_STAGE_TO_SHARE)
     }.also { ruleEventDetail.launch(it) }
-}
-
-fun prepareEventToUpdateIntentAndLaunchActivity(ruleTeiDashboard: LazyActivityScenarioRule<TeiDashboardMobileActivity>) {
-    Intent(
-        ApplicationProvider.getApplicationContext(),
-        TeiDashboardMobileActivity::class.java,
-    ).apply {
-        putExtra(PROGRAM_UID, PROGRAM_TB_UID)
-        putExtra(TEI_UID, TEI_TO_UPDATE_UID)
-        putExtra(ENROLLMENT_UID, ENROLLMENT_TO_UPDATE_UID)
-    }.also { ruleTeiDashboard.launch(it) }
 }

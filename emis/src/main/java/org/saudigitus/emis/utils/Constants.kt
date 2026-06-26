@@ -3,6 +3,8 @@ package org.saudigitus.emis.utils
 object Constants {
     // data store
     const val KEY = "values"
+    const val AUTH_KEY = "auth"
+    const val NAMESPACE = "semis"
     const val CALENDAR_KEY = "schoolCalendar"
     const val STAFF = "staff"
     const val STUDENT = "student"

@@ -1,0 +1,65 @@
+package org.saudigitus.emis.ui.attendance2.state
+
+import org.saudigitus.emis.data.model.SearchTeiModel
+import org.saudigitus.emis.data.model.Summary
+import org.saudigitus.emis.data.model.schoolcalendar_config.SchoolCalendar
+import org.saudigitus.emis.data.model.schoolcalendar_config.SchoolCalendarConfig
+import org.saudigitus.emis.ui.attendance.ButtonStep
+import org.saudigitus.emis.ui.attendance2.models.AttendanceButtonState
+import org.saudigitus.emis.ui.attendance2.models.AttendanceStatus
+import org.saudigitus.emis.ui.components.InfoCard
+import org.saudigitus.emis.ui.components.ToolbarHeaders
+import org.saudigitus.emis.ui.form.attendance.models.FormFieldData
+import org.saudigitus.emis.ui.form.attendance.models.FormFieldState
+import org.saudigitus.emis.utils.DateHelper
+
+/**
+ * Transient state of the submit/sync step, kept separate from the data so the FAB can show the
+ * truthful action and offline never enters an "uploading" state.
+ *  - IDLE        : nothing in flight; FAB shows Start/Update/Submit.
+ *  - UPLOADING   : online submit; data saved locally and being pushed to the server.
+ *  - SAVED_LOCAL : offline submit; data saved on device only, will upload when online.
+ *  - SYNCING     : manual toolbar (download) sync running.
+ */
+enum class SyncUiPhase { IDLE, UPLOADING, SAVED_LOCAL, SYNCING }
+
+sealed class AttendanceUiState(
+    open val toolbarHeaders: ToolbarHeaders,
+    open val infoCard: InfoCard,
+    open val students: List<SearchTeiModel> = emptyList(),
+) {
+    object LOADING : AttendanceUiState(
+        ToolbarHeaders(
+            title = "Attendance",
+            subtitle = DateHelper.formatDateWithWeekDay(
+                DateHelper.formatDate(System.currentTimeMillis()).orEmpty()
+            )
+        ),
+        InfoCard(displayBoolean = false),
+        emptyList()
+    )
+
+    data class HasAttendance(
+        override val toolbarHeaders: ToolbarHeaders,
+        override val infoCard: InfoCard,
+        override val students: List<SearchTeiModel> = emptyList(),
+        val program: String = "",
+        val attendanceButtonState: AttendanceButtonState = AttendanceButtonState(),
+        val fields: List<FormFieldState> = emptyList(),
+        val fieldsData: List<FormFieldData> = emptyList(),
+        val attendanceStatus: AttendanceStatus? = null,
+        val attendanceSummary: List<Summary> = emptyList(),
+        val attendanceStep: ButtonStep = ButtonStep.EDITING,
+        val canTakeAttendance: Boolean = true,
+        val hasInvalidAbsence: Boolean = false,
+        val isAttendanceCompleted: Boolean = false,
+        val selectedDate: String = DateHelper.formatDate(System.currentTimeMillis()).orEmpty(),
+        val hasCachedData: Boolean = false,
+        val displayReasonField: Map<String, Boolean> = emptyMap(),
+        val displayBulk: Boolean = false,
+        val displaySummary: Boolean = false,
+        val execSync: Boolean = false,
+        val syncPhase: SyncUiPhase = SyncUiPhase.IDLE,
+    ) : AttendanceUiState(toolbarHeaders, infoCard, students) {
+    }
+}

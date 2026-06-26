@@ -1,36 +1,36 @@
 package org.saudigitus.emis.data.model.app_config
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class EMISConfigItem(
-    @JsonProperty("absenteeism")
+    @SerializedName("absenteeism")
     val absenteeism: Absenteeism?,
-    @JsonProperty("attendance")
+    @SerializedName("attendance")
     val attendance: Attendance?,
-    @JsonProperty("defaults")
+    @SerializedName("defaults")
     val defaults: Defaults?,
-    @JsonProperty("filters")
+    @SerializedName("filters")
     val filters: Filters?,
-    @JsonProperty("final-result")
+    @SerializedName("final-result")
     val finalResult: FinalResult?,
-    @JsonProperty("key")
+    @SerializedName("key")
     val key: String?,
-    @JsonProperty("lastUpdate")
+    @SerializedName("lastUpdate")
     val lastUpdate: String?,
-    @JsonProperty("performance")
+    @SerializedName("performance")
     val performance: Performance?,
-    @JsonProperty("program")
+    @SerializedName("program")
     val program: String?,
-    @JsonProperty("reenroll")
+    @SerializedName("reenroll")
     val reenroll: Reenroll?,
-    @JsonProperty("registration")
+    @SerializedName("registration")
     val registration: Registration?,
-    @JsonProperty("socio-economics")
+    @SerializedName("socio-economics")
     val socioEconomics: SocioEconomics?,
-    @JsonProperty("trackedEntityType")
+    @SerializedName("trackedEntityType")
     val trackedEntityType: String?,
-    @JsonProperty("transfer")
+    @SerializedName("transfer")
     val transfer: Transfer?
 )

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,8 +24,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
+import org.hisp.dhis.mobile.ui.designsystem.component.ListCardDescriptionModel
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.mapper.map
 import org.saudigitus.emis.ui.components.NoResults
@@ -63,6 +68,7 @@ fun TeiScreen(
                 actionState = ToolbarActionState(
                     syncVisibility = true,
                     showFavorite = false,
+                    filterVisibility = false,
                 ),
                 syncAction = onSync,
             )
@@ -104,18 +110,31 @@ fun TeiScreen(
                             val isInactive = student.enrollments.getOrNull(0)?.status() == EnrollmentStatus.CANCELLED
 
                             ListCard(
-                                modifier = Modifier.testTag("TEI_ITEM")
-                                    .background(
-                                        color = if (isInactive) Color.LightGray.copy(.25f) else Color.White,
+                                modifier = Modifier.fillMaxWidth(),
+                                listCardState = rememberListCardState(
+                                    title = ListCardTitleModel(
+                                        text = card.title,
+                                        allowOverflow = false
                                     ),
-                                listAvatar = card.avatar,
-                                title = ListCardTitleModel(text = card.title),
-                                lastUpdated = card.lastUpdated,
-                                additionalInfoList = card.additionalInfo,
-                                actionButton = card.actionButton,
-                                expandLabelText = card.expandLabelText,
-                                shrinkLabelText = card.shrinkLabelText,
+                                    description = card.description?.let {
+                                        ListCardDescriptionModel(
+                                            text = it,
+                                        )
+                                    },
+                                    lastUpdated = card.lastUpdated,
+                                    additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                                        additionalInfoList = card.additionalInfo,
+                                        syncProgressItem = AdditionalInfoItem(
+                                            key = stringResource(id = R.string.syncing),
+                                            value = "",
+                                        ),
+                                        expandLabelText = stringResource(id = R.string.show_more),
+                                        shrinkLabelText = stringResource(id = R.string.show_less),
+                                        scrollableContent = true,
+                                    ),
+                                ),
                                 onCardClick = card.onCardCLick,
+                                listAvatar = card.avatar, actionButton = card.actionButton,
                             )
                         }
                     }

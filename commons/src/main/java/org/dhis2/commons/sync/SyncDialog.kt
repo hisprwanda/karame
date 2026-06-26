@@ -22,4 +22,13 @@ class SyncDialog(
                 onNoConnectionListener,
             )
     }
+
+    fun showSilent(
+        onComplete: (() -> Unit)? = null,
+        onOffline: (() -> Unit)? = null,
+    ) {
+        (activity.applicationContext as? ComponentProvider)
+            ?.syncComponentProvider
+            ?.syncSilently(activity, recordUid, onComplete, onOffline)
+    }
 }

@@ -59,7 +59,7 @@ fun ActionButtons(
         ) { onCancel.invoke() }
 
         TextButton(
-            title = stringResource(R.string.done),
+            title = stringResource(R.string.sync),
             containerColor = Color.White,
             enabled = !disableActions,
             contentColor = contentColor,

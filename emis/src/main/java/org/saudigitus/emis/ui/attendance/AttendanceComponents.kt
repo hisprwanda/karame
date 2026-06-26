@@ -22,6 +22,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicator
+import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicatorType
+import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
 import org.saudigitus.emis.utils.Utils.WHITE
 import org.saudigitus.emis.utils.Utils.getIconByName
@@ -47,14 +50,21 @@ fun AttendanceItemState(
             val attendance = attendanceState.find { it.tei == tei }
 
             if (attendance != null) {
-                Icon(
-                    imageVector = attendance.setting?.icon ?: ImageVector.vectorResource(
-                        getIconByName("${attendance.setting?.iconName}"),
-                    ),
-                    contentDescription = attendance.value,
-                    modifier = Modifier.size(40.dp),
-                    tint = attendance.setting?.iconColor ?: Color.Black,
-                )
+                val icon = getIconByName("${attendance.setting?.iconName}")
+
+                if (icon != R.drawable.ic_empty) {
+                    Icon(
+                        imageVector = attendance.setting?.icon ?: ImageVector.vectorResource(icon),
+                        contentDescription = attendance.value,
+                        modifier = Modifier.size(40.dp),
+                        tint = attendance.setting?.iconColor ?: Color.Black,
+                    )
+                } else {
+                    ProgressIndicator(
+                        modifier = Modifier.size(40.dp),
+                        type = ProgressIndicatorType.CIRCULAR_SMALL
+                    )
+                }
             } else {
                 Icon(
                     imageVector = Icons.Filled.Help,

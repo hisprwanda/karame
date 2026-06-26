@@ -20,7 +20,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import org.dhis2.R
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.models.EventCatCombo
 import org.dhis2.usescases.eventsWithoutRegistration.eventDetails.models.EventCatComboUiModel
@@ -43,9 +42,12 @@ import org.hisp.dhis.mobile.ui.designsystem.component.InputYesNoFieldValues
 import org.hisp.dhis.mobile.ui.designsystem.component.Orientation
 import org.hisp.dhis.mobile.ui.designsystem.component.RadioButtonBlock
 import org.hisp.dhis.mobile.ui.designsystem.component.RadioButtonData
+import org.hisp.dhis.mobile.ui.designsystem.component.state.BottomSheetShellDefaults
+import org.hisp.dhis.mobile.ui.designsystem.component.state.BottomSheetShellUIState
 import org.hisp.dhis.mobile.ui.designsystem.resource.provideStringResource
 import org.hisp.dhis.mobile.ui.designsystem.theme.Spacing
 import org.hisp.dhis.mobile.ui.designsystem.theme.TextColor
+import java.util.Locale
 
 @Composable
 fun SchedulingDialogUi(
@@ -58,27 +60,36 @@ fun SchedulingDialogUi(
     val programStages by viewModel.programStages.collectAsState()
     val selectedProgramStage by viewModel.programStage.collectAsState()
     val enrollment by viewModel.enrollment.collectAsState()
+    val overdueSubtitle by viewModel.overdueEventSubtitle.collectAsState()
 
-    val yesNoOptions = InputYesNoFieldValues.entries.map {
-        RadioButtonData(
-            it.value,
-            selected = false,
-            enabled = true,
-            textInput = provideStringResource(it.value),
-        )
-    }
+    val yesNoOptions =
+        InputYesNoFieldValues.entries.map {
+            RadioButtonData(
+                it.value,
+                selected = false,
+                enabled = true,
+                textInput = provideStringResource(it.value.lowercase(Locale.getDefault())),
+            )
+        }
     var optionSelected by remember { mutableStateOf(yesNoOptions.first()) }
     val scheduleNew by remember(optionSelected) {
         derivedStateOf { optionSelected == yesNoOptions.first() }
     }
-
-    BottomSheetShell(
-        title = bottomSheetTitle(
+    val bottomSheetTitle =
+        bottomSheetTitle(
             launchMode = launchMode,
             programStages = programStages,
-        ),
-        subtitle = viewModel.overdueSubtitle,
-        headerTextAlignment = TextAlign.Start,
+        )
+    BottomSheetShell(
+        uiState =
+            BottomSheetShellUIState(
+                showTopSectionDivider = false,
+                showBottomSectionDivider = false,
+                title = bottomSheetTitle,
+                subtitle = overdueSubtitle,
+                headerTextAlignment = TextAlign.Start,
+                animateHeaderOnKeyboardAppearance = false,
+            ),
         buttonBlock = {
             ButtonBlock(
                 launchMode = launchMode,
@@ -90,16 +101,17 @@ fun SchedulingDialogUi(
                 onDismiss = onDismiss,
             )
         },
-        showSectionDivider = false,
         content = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(Spacing.Spacing0),
+                verticalArrangement = Arrangement.spacedBy(Spacing.Spacing16),
             ) {
                 if (launchMode.showYesNoOptions) {
                     RadioButtonBlock(
-                        modifier = Modifier
-                            .padding(bottom = Spacing.Spacing8)
-                            .semantics { testTag = "YES_NO_OPTIONS" },
+                        modifier =
+                            Modifier
+                                .padding(bottom = Spacing.Spacing8)
+                                .semantics { testTag = "YES_NO_OPTIONS" },
                         orientation = Orientation.HORIZONTAL,
                         content = yesNoOptions,
                         itemSelected = optionSelected,
@@ -123,7 +135,6 @@ fun SchedulingDialogUi(
             }
         },
         onDismiss = onDismiss,
-        animateHeaderOnKeyboardAppearance = false,
     )
 }
 
@@ -138,15 +149,19 @@ private fun ButtonBlock(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier) {
+    Box(
+        modifier
+            .padding(BottomSheetShellDefaults.buttonBlockPaddings()),
+    ) {
         when (launchMode) {
             is LaunchMode.NewSchedule -> {
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     style = ButtonStyle.FILLED,
-                    enabled = !scheduleNew ||
-                        !date.dateValue.isNullOrEmpty() &&
-                        catCombo.isCompleted,
+                    enabled =
+                        !scheduleNew ||
+                            date.isValid &&
+                            catCombo.isCompleted,
                     text = buttonTitle(scheduleNew),
                     onClick = {
                         when {
@@ -159,20 +174,20 @@ private fun ButtonBlock(
 
             is LaunchMode.EnterEvent -> {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(Spacing.Spacing0),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.Spacing8),
                 ) {
                     val eventLabel =
                         selectedProgramStage?.displayEventLabel() ?: stringResource(R.string.event)
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         style = ButtonStyle.FILLED,
-                        enabled = !date.dateValue.isNullOrEmpty(),
+                        enabled = date.isValid,
                         text = stringResource(R.string.enter_event, eventLabel),
                         onClick = {
                             viewModel.enterEvent(launchMode)
                         },
                     )
-
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         style = ButtonStyle.OUTLINED,
@@ -200,28 +215,32 @@ fun bottomSheetTitle(
     launchMode: LaunchMode,
     programStages: List<ProgramStage>,
 ): String {
-    val prefix = when (launchMode) {
-        is LaunchMode.NewSchedule -> stringResource(id = R.string.schedule_next)
-        is LaunchMode.EnterEvent -> stringResource(id = R.string.scheduled_enter_event)
-    }
+    val prefix =
+        when (launchMode) {
+            is LaunchMode.NewSchedule -> stringResource(id = R.string.schedule_next)
+            is LaunchMode.EnterEvent -> stringResource(id = R.string.scheduled_enter_event)
+        }
     val defaultEventName = stringResource(id = R.string.event)
-    val programName = when (programStages.size) {
-        1 -> programStages.first().displayEventLabel() ?: defaultEventName
-        else -> defaultEventName
-    }
-    val terminalSymbol = when (launchMode) {
-        is LaunchMode.NewSchedule -> "?"
-        is LaunchMode.EnterEvent -> ""
-    }
+    val programName =
+        when (programStages.size) {
+            1 -> programStages.first().displayEventLabel() ?: defaultEventName
+            else -> defaultEventName
+        }
+    val terminalSymbol =
+        when (launchMode) {
+            is LaunchMode.NewSchedule -> "?"
+            is LaunchMode.EnterEvent -> ""
+        }
 
     return "$prefix $programName$terminalSymbol"
 }
 
 @Composable
-fun buttonTitle(scheduleNew: Boolean): String = when (scheduleNew) {
-    true -> stringResource(id = R.string.schedule)
-    false -> stringResource(id = R.string.done)
-}
+fun buttonTitle(scheduleNew: Boolean): String =
+    when (scheduleNew) {
+        true -> stringResource(id = R.string.schedule)
+        false -> stringResource(id = R.string.done)
+    }
 
 @Composable
 fun ProvideScheduleNewEventForm(
@@ -245,15 +264,16 @@ fun ProvideScheduleNewEventForm(
             fetchItem = { index -> dropdownItems[index] },
             itemCount = dropdownItems.size,
             onSearchOption = { query ->
-                dropdownItems = if (query.isNotEmpty()) {
-                    dropdownItems.filter { it.label.contains(query) }
-                } else {
-                    programStages.map { DropdownItem(it.displayName().orEmpty()) }
-                }
+                dropdownItems =
+                    if (query.isNotEmpty()) {
+                        dropdownItems.filter { it.label.contains(query) }
+                    } else {
+                        programStages.map { DropdownItem(it.displayName().orEmpty()) }
+                    }
             },
             useDropDown = dropdownItems.size < 15,
             loadOptions = {
-                /*no-op*/
+                // no-op
             },
             selectedItem = DropdownItem(selectedProgramStage?.displayName().orEmpty()),
             onResetButtonClicked = {},
@@ -272,42 +292,46 @@ fun ProvideScheduleNewEventForm(
                 onDateClick = {},
                 onDateSelected = { viewModel.onDateSet(it.year, it.month, it.day) },
                 onClear = { viewModel.onClearEventReportDate() },
+                onError = { viewModel.onDateError() },
             ),
         )
     } else {
         ProvidePeriodSelector(
-            uiModel = EventInputDateUiModel(
-                eventDate = date,
-                detailsEnabled = true,
-                onDateClick = { viewModel.showPeriodDialog() },
-                onDateSelected = {},
-                onClear = { viewModel.onClearEventReportDate() },
-                required = true,
-                showField = date.active,
-                selectableDates = viewModel.getSelectableDates(),
-            ),
+            uiModel =
+                EventInputDateUiModel(
+                    eventDate = date,
+                    detailsEnabled = true,
+                    onDateClick = { viewModel.showPeriodDialog() },
+                    onDateSelected = {},
+                    onClear = { viewModel.onClearEventReportDate() },
+                    required = true,
+                    showField = date.active,
+                    selectableDates = viewModel.getSelectableDates(),
+                ),
             modifier = Modifier,
         )
     }
 
     if (!catCombo.isDefault && launchMode !is LaunchMode.EnterEvent) {
         catCombo.categories.forEach { category ->
+
             ProvideCategorySelector(
-                eventCatComboUiModel = EventCatComboUiModel(
-                    category = category,
-                    eventCatCombo = catCombo,
-                    detailsEnabled = true,
-                    currentDate = date.currentDate,
-                    selectedOrgUnit = orgUnitUid,
-                    onClearCatCombo = { viewModel.onClearCatCombo() },
-                    onOptionSelected = {
-                        val selectedOption = Pair(category.uid, it?.uid())
-                        viewModel.setUpCategoryCombo(selectedOption)
-                    },
-                    required = true,
-                    noOptionsText = stringResource(R.string.no_options),
-                    catComboText = stringResource(R.string.cat_combo),
-                ),
+                eventCatComboUiModel =
+                    EventCatComboUiModel(
+                        category = category,
+                        eventCatCombo = catCombo,
+                        detailsEnabled = true,
+                        currentDate = date.currentDate,
+                        selectedOrgUnit = orgUnitUid,
+                        onClearCatCombo = { viewModel.onClearCatCombo() },
+                        onOptionSelected = {
+                            val selectedOption = Pair(category.uid, it?.uid())
+                            viewModel.setUpCategoryCombo(selectedOption)
+                        },
+                        required = true,
+                        noOptionsText = stringResource(R.string.no_options),
+                        catComboText = stringResource(R.string.cat_combo),
+                    ),
             )
         }
     }

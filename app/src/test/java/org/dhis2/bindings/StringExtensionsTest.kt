@@ -3,7 +3,6 @@ package org.dhis2.bindings
 import org.junit.Test
 
 class StringExtensionsTest {
-
     @Test
     fun `Should return one initial for a string with one word`() {
         val user = "Rick"
@@ -97,6 +96,13 @@ class StringExtensionsTest {
         val new = "1.2.3"
         val old = "1.2.3"
         assert(!new.newVersion(old))
+    }
+
+    @Test
+    fun `Should return true for new version with lower patch version`() {
+        val new = "3.1.0"
+        val old = "3.0.1"
+        assert(new.newVersion(old))
     }
 
     @Test

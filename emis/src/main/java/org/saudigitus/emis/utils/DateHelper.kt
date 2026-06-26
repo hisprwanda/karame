@@ -1,5 +1,6 @@
 package org.saudigitus.emis.utils
 
+import android.R.id.input
 import org.dhis2.commons.date.DateUtils
 import org.saudigitus.emis.data.model.schoolcalendar_config.Holiday
 import timber.log.Timber
@@ -18,6 +19,20 @@ object DateHelper {
             formatter.format(Date(date))
         } catch (e: Exception) {
             Timber.tag("DATE_FORMAT").e(e)
+            null
+        }
+    }
+
+    fun formatDate(date: String?): String? {
+        return try {
+            if (date == null) return null
+
+            val inputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+            val date = inputFormat.parse(date)
+            return outputFormat.format(date!!)
+        } catch (_: Exception) {
             null
         }
     }

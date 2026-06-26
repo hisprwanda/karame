@@ -1,12 +1,12 @@
 package org.saudigitus.emis.data.model
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@Serializable
 data class Visualization(
-    @JsonProperty("programIndicator")
+    @SerializedName("programIndicator")
     val programIndicator: String,
-    @JsonProperty("type")
+    @SerializedName("type")
     val type: String
 )

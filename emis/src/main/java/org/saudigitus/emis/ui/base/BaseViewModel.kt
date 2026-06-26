@@ -42,7 +42,7 @@ abstract class BaseViewModel(
     private val _currentSchoolCalendar = MutableStateFlow<SchoolCalendar?>(null)
     val currentSchoolCalendar: StateFlow<SchoolCalendar?> = _currentSchoolCalendar;
 
-    protected val _eventDate = MutableStateFlow(DateHelper.formatDate(System.currentTimeMillis()) ?: "")
+    protected val _eventDate = MutableStateFlow(DateHelper.formatDate(System.currentTimeMillis()).orEmpty())
     val eventDate: StateFlow<String> = _eventDate
 
     protected val _program = MutableStateFlow("")

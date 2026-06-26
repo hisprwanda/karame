@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -13,7 +12,6 @@ import kotlinx.coroutines.launch
 import org.saudigitus.emis.data.local.AnalyticsRepository
 import javax.inject.Inject
 
-@HiltViewModel
 class AnalyticsViewModel
 @Inject constructor(
     private val analyticsRepository: AnalyticsRepository

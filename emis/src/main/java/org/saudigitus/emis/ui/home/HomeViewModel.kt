@@ -2,7 +2,6 @@ package org.saudigitus.emis.ui.home
 
 import android.os.Bundle
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +29,6 @@ import org.saudigitus.emis.utils.Constants
 import javax.inject.Inject
 
 
-@HiltViewModel
 class HomeViewModel
 @Inject constructor(
     private val repository: DataManager,
@@ -160,6 +158,10 @@ class HomeViewModel
     private suspend fun getDataElementName(uid: String) =
         repository.getDataElement(uid)?.displayFormName().orEmpty()
 
+    fun refreshData() {
+        getTeis()
+    }
+
     private fun getTeis() {
         viewModelScope.launch {
             if (!viewModelState.value.isNull) {
@@ -183,6 +185,7 @@ class HomeViewModel
                     viewModelState.updateAndGet {
                         it.copy(
                             isLoading = false,
+                            isFetchingTei = false,
                             infoCard = InfoCard(
                                 grade = viewModelState.value.grade?.itemName.orEmpty(),
                                 section = viewModelState.value.section?.itemName.orEmpty(),
@@ -291,8 +294,8 @@ class HomeViewModel
             }
             val updatedFilters = async { reloadFilters() }.await()
             viewModelState.update { it.copy(dataElementFilters = updatedFilters) }
+            invokeInFilters()
         }
-        invokeInFilters()
     }
 
     private fun setGrade(grade: DropdownItem?) {
@@ -388,7 +391,32 @@ class HomeViewModel
     }
 
     private fun invokeInFilters() {
-        closeFilterSection()
+        val isFetching =
+            if (
+                uiState.value.academicYear != null
+                && uiState.value.school != null
+                && uiState.value.grade != null
+                && uiState.value.section != null
+                && uiState.value.dataElementFilters.isNotEmpty()
+            ) {
+                true
+            } else if (
+                uiState.value.academicYear != null
+                && uiState.value.school != null
+                && uiState.value.dataElementFilters.isEmpty()
+            ) {
+                true
+            } else {
+                false
+            }
+
+        viewModelState.update {
+            it.copy(isFetchingTei = isFetching)
+        }
+
+        if (isFetching) {
+            closeFilterSection()
+        }
         getTeis()
     }
 }

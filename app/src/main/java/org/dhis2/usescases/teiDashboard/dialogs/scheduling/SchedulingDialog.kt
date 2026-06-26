@@ -14,21 +14,25 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.os.bundleOf
 import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.parcelize.Parcelize
 import org.dhis2.bindings.app
 import org.dhis2.commons.data.EventCreationType
-import org.dhis2.commons.dialogs.PeriodDialog
+import org.dhis2.commons.date.toUiStringResource
+import org.dhis2.commons.dialogs.AlertBottomDialog
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialog
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialogUiModel
 import org.dhis2.commons.dialogs.calendarpicker.CalendarPicker
 import org.dhis2.commons.dialogs.calendarpicker.OnDatePickerListener
+import org.dhis2.commons.periods.ui.PeriodSelectorContent
 import org.dhis2.form.R
 import org.dhis2.form.model.EventMode
 import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureActivity
-import java.util.Date
+import org.hisp.dhis.android.core.period.PeriodType
 import javax.inject.Inject
 
 class SchedulingDialog : BottomSheetDialogFragment() {
-
     companion object {
         const val SCHEDULING_DIALOG = "SCHEDULING_DIALOG"
         const val SCHEDULING_DIALOG_RESULT = "SCHEDULING_DIALOG_RESULT"
@@ -42,20 +46,24 @@ class SchedulingDialog : BottomSheetDialogFragment() {
         fun newSchedule(
             enrollmentUid: String,
             programStagesUids: List<String>,
+            ownerOrgUnitUid: String?,
             showYesNoOptions: Boolean,
             eventCreationType: EventCreationType,
         ): SchedulingDialog {
-            val launchMode = LaunchMode.NewSchedule(
-                enrollmentUid = enrollmentUid,
-                programStagesUids = programStagesUids,
-                showYesNoOptions = showYesNoOptions,
-                eventCreationType = eventCreationType,
-            )
+            val launchMode =
+                LaunchMode.NewSchedule(
+                    enrollmentUid = enrollmentUid,
+                    programStagesUids = programStagesUids,
+                    ownerOrgUnitUid = ownerOrgUnitUid,
+                    showYesNoOptions = showYesNoOptions,
+                    eventCreationType = eventCreationType,
+                )
 
             return SchedulingDialog().apply {
-                arguments = bundleOf(
-                    TAG_LAUNCH_MODE to launchMode,
-                )
+                arguments =
+                    bundleOf(
+                        TAG_LAUNCH_MODE to launchMode,
+                    )
             }
         }
 
@@ -64,16 +72,18 @@ class SchedulingDialog : BottomSheetDialogFragment() {
             showYesNoOptions: Boolean,
             eventCreationType: EventCreationType,
         ): SchedulingDialog {
-            val launchMode = LaunchMode.EnterEvent(
-                eventUid = eventUid,
-                showYesNoOptions = showYesNoOptions,
-                eventCreationType = eventCreationType,
-            )
+            val launchMode =
+                LaunchMode.EnterEvent(
+                    eventUid = eventUid,
+                    showYesNoOptions = showYesNoOptions,
+                    eventCreationType = eventCreationType,
+                )
 
             return SchedulingDialog().apply {
-                arguments = bundleOf(
-                    TAG_LAUNCH_MODE to launchMode,
-                )
+                arguments =
+                    bundleOf(
+                        TAG_LAUNCH_MODE to launchMode,
+                    )
             }
         }
     }
@@ -122,11 +132,12 @@ class SchedulingDialog : BottomSheetDialogFragment() {
         }
 
         viewModel.onEnterEvent = { eventUid, programUid ->
-            val bundle = EventCaptureActivity.getActivityBundle(
-                eventUid,
-                programUid,
-                EventMode.SCHEDULE,
-            )
+            val bundle =
+                EventCaptureActivity.getActivityBundle(
+                    eventUid,
+                    programUid,
+                    EventMode.SCHEDULE,
+                )
             Intent(activity, EventCaptureActivity::class.java).apply {
                 putExtras(bundle)
                 startActivity(this)
@@ -139,8 +150,8 @@ class SchedulingDialog : BottomSheetDialogFragment() {
             showCalendarDialog()
         }
 
-        viewModel.showPeriods = {
-            showPeriodDialog()
+        viewModel.showPeriods = { periodType ->
+            showPeriodDialog(periodType)
         }
 
         return ComposeView(requireContext()).apply {
@@ -168,6 +179,7 @@ class SchedulingDialog : BottomSheetDialogFragment() {
                 override fun onNegativeClick() {
                     // Unused
                 }
+
                 override fun onPositiveClick(datePicker: DatePicker) {
                     viewModel.onDateSet(
                         datePicker.year,
@@ -180,29 +192,43 @@ class SchedulingDialog : BottomSheetDialogFragment() {
         dialog.show()
     }
 
-    private fun showPeriodDialog() {
-        PeriodDialog()
-            .setPeriod(viewModel.eventDate.value.periodType)
-            .setMinDate(viewModel.eventDate.value.minDate)
-            .setMaxDate(viewModel.eventDate.value.maxDate)
-            .setPossitiveListener { selectedDate: Date ->
-                viewModel.setUpEventReportDate(selectedDate)
-            }
-            .show(requireActivity().supportFragmentManager, PeriodDialog::class.java.simpleName)
+    private fun showPeriodDialog(periodType: PeriodType) {
+        BottomSheetDialog(
+            bottomSheetDialogUiModel =
+                BottomSheetDialogUiModel(
+                    title = getString(periodType.toUiStringResource()),
+                    iconResource = -1,
+                ),
+            onSecondaryButtonClicked = {
+            },
+            onMainButtonClicked = { _ ->
+            },
+            showTopDivider = true,
+            showBottomDivider = true,
+            content = { bottomSheetDialog, scrollState ->
+                val periods = viewModel.fetchPeriods().collectAsLazyPagingItems()
+                PeriodSelectorContent(
+                    periods = periods,
+                    scrollState = scrollState,
+                ) { period ->
+                    period.startDate.let {
+                        viewModel.setUpEventReportDate(it)
+                    }
+                    bottomSheetDialog.dismiss()
+                }
+            },
+        ).show(childFragmentManager, AlertBottomDialog::class.java.simpleName)
     }
 
     sealed interface LaunchMode : Parcelable {
-
         companion object {
-
-            fun fromBundle(args: Bundle): LaunchMode {
-                return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            fun fromBundle(args: Bundle): LaunchMode =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     args.getParcelable(TAG_LAUNCH_MODE, LaunchMode::class.java)!!
                 } else {
                     @Suppress("DEPRECATION")
                     args.getParcelable(TAG_LAUNCH_MODE)!!
                 }
-            }
         }
 
         val showYesNoOptions: Boolean
@@ -212,6 +238,7 @@ class SchedulingDialog : BottomSheetDialogFragment() {
         data class NewSchedule(
             val enrollmentUid: String,
             val programStagesUids: List<String>,
+            val ownerOrgUnitUid: String?,
             override val showYesNoOptions: Boolean,
             override val eventCreationType: EventCreationType,
         ) : LaunchMode

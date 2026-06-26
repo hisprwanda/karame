@@ -1,8 +1,6 @@
 package org.saudigitus.emis.ui.subjects
 
-import android.util.Log
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -13,7 +11,6 @@ import org.saudigitus.emis.ui.components.ToolbarHeaders
 import org.saudigitus.emis.utils.Constants
 import javax.inject.Inject
 
-@HiltViewModel
 class SubjectViewModel
 @Inject constructor(
     private val repository: DataManager,

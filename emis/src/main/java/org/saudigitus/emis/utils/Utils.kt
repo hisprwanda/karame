@@ -5,7 +5,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import org.dhis2.commons.resources.ColorUtils
 import org.saudigitus.emis.R
+import org.saudigitus.emis.data.model.TransferredTei
+import org.saudigitus.emis.data.model.TransferredType
 import org.saudigitus.emis.data.model.app_config.EMISConfig
+import org.saudigitus.emis.data.model.app_config.TransferEvent
 import kotlin.random.Random
 
 object Utils {
@@ -13,6 +16,8 @@ object Utils {
     const val RED = 0xFFE57373
     const val ORANGE = 0xFFFFB74D
     const val WHITE = 0xFFFFFFFF
+
+    const val GRAY = 0xFF888888
 
     fun getIconByName(name: String) = when (name) {
         "correct_blue_fill" -> R.drawable.present
@@ -47,7 +52,7 @@ object Utils {
         }
     }
 
-    private fun getAttendanceStatusColor(key: String): Color {
+    fun getAttendanceStatusColor(key: String): Color {
         return when (key) {
             "present" -> Color(0xFF81C784)
             "absent" -> Color(0xFFE57373)
@@ -61,5 +66,18 @@ object Utils {
         return (1..length)
             .map { chars[Random.nextInt(chars.length)] }
             .joinToString("")
+    }
+
+
+    fun mapToType(
+        dataElement: String,
+        transferred: TransferEvent
+    ): TransferredType? {
+        return when (dataElement) {
+            transferred.trackerId -> TransferredType.TRACKER_ID
+            transferred.academicYear -> TransferredType.ACADEMIC_YEAR
+            transferred.enrollment -> TransferredType.ENROLLMENT
+            else -> null
+        }
     }
 }

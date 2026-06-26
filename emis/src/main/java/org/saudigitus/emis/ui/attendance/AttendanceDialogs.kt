@@ -17,13 +17,13 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalTextStyle
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -138,10 +139,13 @@ fun AttendanceSummaryDialog(
     data: List<Summary>,
     themeColor: Color,
     disableActions: Boolean = false,
-    onCancel: () -> Unit,
-    onDone: () -> Unit,
+    showButtons: Boolean = true,
+    dismissOnBack: Boolean = false,
+    onDismissRequest: () -> Unit = {},
+    onCancel: () -> Unit = {},
+    onDone: () -> Unit = {},
 ) {
-    AlertDialogTemplate {
+    AlertDialogTemplate(dismissOnBack = dismissOnBack, onDismissRequest = onDismissRequest) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = title,
@@ -180,18 +184,22 @@ fun AttendanceSummaryDialog(
                 )
             }
         }
-        Divider(
-            modifier = Modifier.fillMaxWidth(),
-            color = Color.LightGray.copy(.75f),
-            thickness = .5.dp,
-        )
-        ActionButtons(
-            modifier = Modifier.align(Alignment.End),
-            contentColor = themeColor,
-            disableActions = disableActions,
-            onCancel = onCancel,
-            onDone = onDone,
-        )
+        if (showButtons) {
+            Divider(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.LightGray.copy(.75f),
+                thickness = .5.dp,
+            )
+            ActionButtons(
+                modifier = Modifier.align(Alignment.End),
+                contentColor = themeColor,
+                disableActions = disableActions,
+                onCancel = onCancel,
+                onDone = onDone,
+            )
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
 
@@ -310,14 +318,16 @@ private fun DialogTemplate(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlertDialogTemplate(
+    dismissOnBack: Boolean = false,
+    onDismissRequest: () -> Unit = {},
     content:
     @Composable
     (ColumnScope.() -> Unit),
 ) {
     AlertDialog(
-        onDismissRequest = {},
+        onDismissRequest = onDismissRequest,
         properties = DialogProperties(
-            dismissOnBackPress = false,
+            dismissOnBackPress = dismissOnBack,
             dismissOnClickOutside = false,
         ),
     ) {

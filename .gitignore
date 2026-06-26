@@ -12,4 +12,6 @@
 /*.secrets.yml
 /gradle.deps
 .kotlin/
+__pycache__/
+*.pyc
 *[Dd]raft*

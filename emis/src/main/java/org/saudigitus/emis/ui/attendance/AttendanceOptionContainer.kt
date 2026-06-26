@@ -25,8 +25,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.dhis2.commons.ui.model.ListCardUiModel
 import org.hisp.dhis.android.core.common.ValueType
+import org.hisp.dhis.mobile.ui.designsystem.component.AdditionalInfoItem
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCard
+import org.hisp.dhis.mobile.ui.designsystem.component.ListCardDescriptionModel
 import org.hisp.dhis.mobile.ui.designsystem.component.ListCardTitleModel
+import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicator
+import org.hisp.dhis.mobile.ui.designsystem.component.ProgressIndicatorType
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberAdditionalInfoColumnState
+import org.hisp.dhis.mobile.ui.designsystem.component.state.rememberListCardState
 import org.saudigitus.emis.R
 import org.saudigitus.emis.data.model.SearchTeiModel
 import org.saudigitus.emis.data.model.dto.AttendanceEntity
@@ -41,6 +47,7 @@ import org.saudigitus.emis.utils.isVisible
 @Suppress("DEPRECATION")
 @Composable
 fun AttendanceOptionContainer(
+    isLoading: Boolean,
     attendanceStatus: List<AttendanceEntity> = emptyList(),
     attendanceBtnState: List<AttendanceActionButtonState> = emptyList(),
     attendanceOptions: List<AttendanceOption> = emptyList(),
@@ -48,19 +55,20 @@ fun AttendanceOptionContainer(
     fieldsState: List<Field> = emptyList(),
     formData: List<FormData> = emptyList(),
     attendanceStep: ButtonStep,
+    hasInvalidData: Boolean = false,
     card: ListCardUiModel,
     student: SearchTeiModel,
     isEnabled: Boolean = true,
+    displayReason: Boolean = true,
     setAttendance: (
-        index: Int,
+        key: String?,
         ou: String,
         tei: String,
         value: String,
         reasonOfAbsence: String?,
-        color: Color?,
         hasPersisted: Boolean,
     ) -> Unit,
-    setTEIAbsence: (index: Int, tei: String, value: String, color: Color?) -> Unit,
+    setTEIAbsence: (ou: String, tei: String, value: String) -> Unit,
     setAbsenceState: (
         key: String,
         event: String,
@@ -73,12 +81,8 @@ fun AttendanceOptionContainer(
         ou: String,
         fieldData: Triple<String, String?, ValueType?>,
     ) -> Unit,
+    isAbsent: (String, Boolean) -> Unit
 ) {
-    var isAbsent by rememberSaveable { mutableStateOf(false) }
-    var has2BVisible by rememberSaveable {
-        mutableStateOf(formData.isVisible(student.tei.uid()))
-    }
-
     Column(
         modifier = Modifier
             .padding(bottom = 5.dp)
@@ -93,21 +97,42 @@ fun AttendanceOptionContainer(
             contentAlignment = Alignment.CenterEnd,
         ) {
             ListCard(
-                modifier = Modifier.testTag("TEI_ITEM"),
-                listAvatar = card.avatar,
-                title = ListCardTitleModel(text = card.title),
-                additionalInfoList = card.additionalInfo,
-                actionButton = card.actionButton,
-                expandLabelText = card.expandLabelText,
-                shrinkLabelText = card.shrinkLabelText,
+                modifier = Modifier.fillMaxWidth(),
+                listCardState = rememberListCardState(
+                    title = ListCardTitleModel(
+                        text = card.title,
+                        allowOverflow = false
+                    ),
+                    description = card.description?.let {
+                        ListCardDescriptionModel(
+                            text = it,
+                        )
+                    },
+                    lastUpdated = card.lastUpdated,
+                    additionalInfoColumnState = rememberAdditionalInfoColumnState(
+                        additionalInfoList = card.additionalInfo,
+                        syncProgressItem = AdditionalInfoItem(
+                            key = stringResource(id = R.string.syncing),
+                            value = "",
+                        ),
+                        expandLabelText = stringResource(id = R.string.show_more),
+                        shrinkLabelText = stringResource(id = R.string.show_less),
+                        scrollableContent = true,
+                    ),
+                ),
                 onCardClick = card.onCardCLick,
-                shadow = false,
+                listAvatar = card.avatar, actionButton = card.actionButton,
             )
 
             if (attendanceStep == ButtonStep.EDITING) {
                 AttendanceItemState(
                     tei = student.tei.uid(),
                     attendanceState = attendanceStatus,
+                )
+            } else if (isLoading) {
+                ProgressIndicator(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    type = ProgressIndicatorType.CIRCULAR_SMALL
                 )
             } else {
                 AttendanceButtons(
@@ -117,27 +142,19 @@ fun AttendanceOptionContainer(
                     isEnabled = isEnabled,
                 ) { index, key, tei, attendance, color ->
                     setAttendance(
-                        index,
+                        key,
                         student.tei.organisationUnit().orEmpty(),
                         tei ?: student.tei.uid(),
                         attendance,
                         null,
-                        color,
                         true,
                     )
-                    if (key.lowercase() == ABSENT) {
-                        isAbsent = true
-                        setTEIAbsence(index, tei ?: student.tei.uid(), attendance, color)
-                    } else {
-                        isAbsent = false
-                        has2BVisible = false
-                    }
                 }
             }
         }
         AbsenceForm(
-            visibility = isAbsent || formData.isVisible(student.tei.uid()),
-            enabled = attendanceStep == ButtonStep.HOLD_SAVING,
+            visibility = displayReason || formData.isVisible(student.tei.uid()),
+            enabled = attendanceStep != ButtonStep.EDITING,
             student = student,
             formFields = formFields,
             fieldsState = fieldsState,
@@ -198,7 +215,7 @@ private fun AbsenceForm(
                 onNext = {
                     onNext.invoke(
                         student.uid(),
-                        student.tei.organisationUnit() ?: "",
+                        student.tei.organisationUnit().orEmpty(),
                         it,
                     )
                 },

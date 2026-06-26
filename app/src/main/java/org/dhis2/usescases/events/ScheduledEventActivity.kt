@@ -4,14 +4,20 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.databinding.DataBindingUtil
+import androidx.paging.compose.collectAsLazyPagingItems
 import org.dhis2.App
 import org.dhis2.R
 import org.dhis2.commons.date.DateUtils
-import org.dhis2.commons.dialogs.PeriodDialog
+import org.dhis2.commons.date.toUiStringResource
+import org.dhis2.commons.dialogs.AlertBottomDialog
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialog
+import org.dhis2.commons.dialogs.bottomsheet.BottomSheetDialogUiModel
+import org.dhis2.commons.periods.ui.PeriodSelectorContent
 import org.dhis2.databinding.ActivityEventScheduledBinding
 import org.dhis2.form.model.EventMode
 import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureActivity
@@ -26,14 +32,19 @@ import org.hisp.dhis.android.core.event.EventStatus
 import org.hisp.dhis.android.core.period.PeriodType
 import org.hisp.dhis.android.core.program.Program
 import org.hisp.dhis.android.core.program.ProgramStage
+import org.hisp.dhis.mobile.ui.designsystem.theme.Spacing
 import javax.inject.Inject
 
 const val EXTRA_EVENT_UID = "EVENT_UID"
 
-class ScheduledEventActivity : ActivityGlobalAbstract(), ScheduledEventContract.View {
-
+class ScheduledEventActivity :
+    ActivityGlobalAbstract(),
+    ScheduledEventContract.View {
     companion object {
-        fun getIntent(context: Context, eventUid: String): Intent {
+        fun getIntent(
+            context: Context,
+            eventUid: String,
+        ): Intent {
             val intent = Intent(context, ScheduledEventActivity::class.java)
             intent.putExtra(EXTRA_EVENT_UID, eventUid)
             return intent
@@ -58,7 +69,7 @@ class ScheduledEventActivity : ActivityGlobalAbstract(), ScheduledEventContract.
                     this,
                 ),
             )
-            ).inject(this)
+        ).inject(this)
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_event_scheduled)
         binding.presenter = presenter
@@ -91,22 +102,28 @@ class ScheduledEventActivity : ActivityGlobalAbstract(), ScheduledEventContract.
         }
     }
 
-    override fun setStage(programStage: ProgramStage, event: Event) {
+    override fun setStage(
+        programStage: ProgramStage,
+        event: Event,
+    ) {
         this.stage = programStage
         binding.programStage = programStage
         binding.scheduledEventFieldContainer.apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-                Column {
-                    val eventDate = EventDate(
-                        label = programStage.executionDateLabel()
-                            ?: getString(R.string.report_date),
-                        dateValue = "",
-                    )
-                    val dueDate = EventDate(
-                        label = programStage.dueDateLabel() ?: getString(R.string.due_date),
-                        dateValue = DateUtils.uiDateFormat().format(event.dueDate() ?: ""),
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.Spacing16)) {
+                    val eventDate =
+                        EventDate(
+                            label =
+                                programStage.executionDateLabel()
+                                    ?: getString(R.string.report_date),
+                            dateValue = "",
+                        )
+                    val dueDate =
+                        EventDate(
+                            label = programStage.dueDateLabel() ?: getString(R.string.due_date),
+                            dateValue = DateUtils.uiDateFormat().format(event.dueDate() ?: ""),
+                        )
 
                     if (willShowCalendar(programStage.periodType())) {
                         ProvideInputDate(
@@ -142,31 +159,43 @@ class ScheduledEventActivity : ActivityGlobalAbstract(), ScheduledEventContract.
                         }
                     } else {
                         ProvidePeriodSelector(
-                            uiModel = EventInputDateUiModel(
-                                eventDate = eventDate,
-                                detailsEnabled = true,
-                                onDateClick = { showEventDatePeriodDialog(programStage.periodType()) },
-                                onDateSelected = {},
-                                onClear = { },
-                                required = true,
-                                showField = true,
-                                selectableDates = presenter.getSelectableDates(program, false),
-                            ),
-                            modifier = Modifier,
-                        )
-
-                        if (programStage.hideDueDate() == false) {
-                            ProvidePeriodSelector(
-                                uiModel = EventInputDateUiModel(
-                                    eventDate = dueDate,
+                            uiModel =
+                                EventInputDateUiModel(
+                                    eventDate = eventDate,
                                     detailsEnabled = true,
-                                    onDateClick = { showDueDatePeriodDialog(programStage.periodType()) },
+                                    onDateClick = {
+                                        showPeriodDialog(
+                                            periodType = programStage.periodType(),
+                                            scheduling = false,
+                                        )
+                                    },
                                     onDateSelected = {},
                                     onClear = { },
                                     required = true,
                                     showField = true,
                                     selectableDates = presenter.getSelectableDates(program, false),
                                 ),
+                            modifier = Modifier,
+                        )
+
+                        if (programStage.hideDueDate() == false) {
+                            ProvidePeriodSelector(
+                                uiModel =
+                                    EventInputDateUiModel(
+                                        eventDate = dueDate,
+                                        detailsEnabled = true,
+                                        onDateClick = {
+                                            showPeriodDialog(
+                                                periodType = programStage.periodType(),
+                                                scheduling = true,
+                                            )
+                                        },
+                                        onDateSelected = {},
+                                        onClear = { },
+                                        required = true,
+                                        showField = true,
+                                        selectableDates = presenter.getSelectableDates(program, false),
+                                    ),
                                 modifier = Modifier,
                             )
                         }
@@ -181,66 +210,40 @@ class ScheduledEventActivity : ActivityGlobalAbstract(), ScheduledEventContract.
         binding.name = program.displayName()
     }
 
-    private fun showEventDatePeriodDialog(periodType: PeriodType?) {
-        if (periodType != null) {
-            var minDate =
-                DateUtils.getInstance().expDate(null, program.expiryDays()!!, periodType)
-            val lastPeriodDate =
-                DateUtils.getInstance().getNextPeriod(periodType, minDate, -1, true)
-
-            if (lastPeriodDate.after(
-                    DateUtils.getInstance().getNextPeriod(
-                        program.expiryPeriodType(),
-                        minDate,
-                        0,
-                    ),
-                )
-            ) {
-                minDate = DateUtils.getInstance().getNextPeriod(periodType, lastPeriodDate, 0)
-            }
-
-            PeriodDialog()
-                .setPeriod(periodType)
-                .setMinDate(minDate)
-                .setMaxDate(DateUtils.getInstance().today)
-                .setPossitiveListener { selectedDate -> presenter.setEventDate(selectedDate) }
-                .show(supportFragmentManager, PeriodDialog::class.java.simpleName)
-        }
-    }
-
-    private fun showDueDatePeriodDialog(periodType: PeriodType?) {
-        if (periodType != null) {
-            var minDate =
-                DateUtils.getInstance().expDate(null, program.expiryDays()!!, periodType)
-            val lastPeriodDate =
-                DateUtils.getInstance().getNextPeriod(periodType, minDate, -1, true)
-
-            if (lastPeriodDate.after(
-                    DateUtils.getInstance().getNextPeriod(
-                        program.expiryPeriodType(),
-                        minDate,
-                        0,
-                    ),
-                )
-            ) {
-                minDate = DateUtils.getInstance().getNextPeriod(periodType, lastPeriodDate, 0)
-            }
-
-            PeriodDialog()
-                .setPeriod(periodType)
-                .setMinDate(minDate)
-                .setMaxDate(DateUtils.getInstance().today)
-                .setPossitiveListener { selectedDate -> presenter.setDueDate(selectedDate) }
-                .show(supportFragmentManager, PeriodDialog::class.java.simpleName)
-        }
+    private fun showPeriodDialog(
+        periodType: PeriodType?,
+        scheduling: Boolean,
+    ) {
+        BottomSheetDialog(
+            bottomSheetDialogUiModel =
+                BottomSheetDialogUiModel(
+                    title = getString((periodType ?: PeriodType.Daily).toUiStringResource()),
+                    iconResource = -1,
+                ),
+            showTopDivider = true,
+            showBottomDivider = true,
+            content = { bottomSheetDialog, scrollState ->
+                val periods = presenter.fetchPeriods(scheduling).collectAsLazyPagingItems()
+                PeriodSelectorContent(
+                    periods = periods,
+                    scrollState = scrollState,
+                ) { selectedPeriod ->
+                    selectedPeriod.startDate.let {
+                        presenter.setDueDate(it)
+                    }
+                    bottomSheetDialog.dismiss()
+                }
+            },
+        ).show(supportFragmentManager, AlertBottomDialog::class.java.simpleName)
     }
 
     override fun openFormActivity() {
-        val bundle = EventCaptureActivity.getActivityBundle(
-            event.uid(),
-            program.uid(),
-            EventMode.SCHEDULE,
-        )
+        val bundle =
+            EventCaptureActivity.getActivityBundle(
+                event.uid(),
+                program.uid(),
+                EventMode.SCHEDULE,
+            )
         Intent(activity, EventCaptureActivity::class.java).apply {
             putExtras(bundle)
             startActivity(this)

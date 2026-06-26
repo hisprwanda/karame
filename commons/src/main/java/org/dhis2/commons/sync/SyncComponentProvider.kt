@@ -10,4 +10,11 @@ interface SyncComponentProvider {
         onSyncNavigationListener: OnSyncNavigationListener? = null,
         onNoConnectionListener: OnNoConnectionListener? = null,
     )
+
+    fun syncSilently(
+        activity: FragmentActivity,
+        programUid: String,
+        onComplete: (() -> Unit)? = null,
+        onOffline: (() -> Unit)? = null,
+    )
 }
