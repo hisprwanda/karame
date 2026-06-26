@@ -50,18 +50,18 @@ fun AttendanceScreen(
 
     LaunchedEffect(Unit) {
         viewModel.execSync.collectLatest { status ->
-            if (status != null && status) {
-                viewModel.setSyncing(true)
+            if (status == true) {
+                // The submit phase (UPLOADING / SAVED_LOCAL) was already set by the VM at submit
+                // time, so we don't flip any flag here — just resolve the outcome.
                 syncSilent.invoke(
                     {
-                        viewModel.setSyncing(false)
+                        // Upload finished: settle the FAB and reload from the DB.
                         snackbarHostState.currentSnackbarData?.dismiss()
-                        viewModel.refresh()
+                        viewModel.onSyncFinished()
                     },
                     {
-                        viewModel.setSyncing(false)
-                        snackbarHostState.currentSnackbarData?.dismiss()
-                        viewModel.refresh()
+                        // Offline: data is saved on the device only; keep "Saved locally" briefly.
+                        viewModel.onSavedOffline()
                     }
                 )
             }
@@ -102,25 +102,36 @@ fun AttendanceScreen(
                 currentSchoolCalendar = currentSchoolCalendar
             )
         },
-        onEvent = {
-            when (it) {
+        onEvent = { event ->
+            when (event) {
                 is AttendanceUiEvent.BackHandler -> navigationBack()
                 is AttendanceUiEvent.SyncHandler -> {
-                    viewModel.setSyncing(true)
+                    viewModel.startManualSync()
                     syncSilent.invoke(
                         {
-                            viewModel.setSyncing(false)
                             snackbarHostState.currentSnackbarData?.dismiss()
-                            viewModel.refresh()
+                            viewModel.onSyncFinished()
                         },
                         {
-                            viewModel.setSyncing(false)
-                            snackbarHostState.currentSnackbarData?.dismiss()
-                            viewModel.refresh()
+                            viewModel.onSyncFinished()
                         }
                     )
                 }
-                else -> viewModel.handleUiEvent(it)
+                is AttendanceUiEvent.AddDate -> {
+                    // Guard parity with back: warn before leaving a day with unsubmitted marks.
+                    if (hasCachedData) {
+                        launchBottomSheet(
+                            activity.getString(R.string.not_saved),
+                            activity.getString(R.string.attendance_not_saved),
+                            supportFragmentManager = activity.supportFragmentManager,
+                            onDiscard = { viewModel.handleUiEvent(event) },
+                            onKeepEdition = { },
+                        )
+                    } else {
+                        viewModel.handleUiEvent(event)
+                    }
+                }
+                else -> viewModel.handleUiEvent(event)
             }
         }
     )

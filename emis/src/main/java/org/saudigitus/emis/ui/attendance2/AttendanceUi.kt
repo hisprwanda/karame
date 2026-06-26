@@ -57,6 +57,7 @@ import org.saudigitus.emis.ui.attendance.ButtonStep
 import org.saudigitus.emis.ui.attendance2.components.AttendanceButton
 import org.saudigitus.emis.ui.attendance2.state.AttendanceUiEvent
 import org.saudigitus.emis.ui.attendance2.state.AttendanceUiState
+import org.saudigitus.emis.ui.attendance2.state.SyncUiPhase
 import org.saudigitus.emis.ui.components.Info
 import org.saudigitus.emis.ui.components.ShowCard
 import org.saudigitus.emis.ui.components.Toolbar
@@ -100,6 +101,9 @@ internal fun AttendanceUi(
             data = uiState.attendanceSummary,
             themeColor = SurfaceColor.Primary,
             showButtons = false,
+            // The summary is a transient confirmation; never let it trap the back button.
+            dismissOnBack = true,
+            onDismissRequest = { onEvent(AttendanceUiEvent.DismissSummary) },
         )
     }
 
@@ -131,11 +135,15 @@ internal fun AttendanceUi(
             ExtendedFloatingActionButton(
                 text = {
                     Text(
-                        text = when {
-                            uiState.isSyncing -> stringResource(R.string.syncing)
-                            uiState.attendanceStep != ButtonStep.EDITING -> stringResource(R.string.submit)
-                            uiState.attendanceButtonState.hasEvent() -> stringResource(R.string.update)
-                            else -> stringResource(R.string.start)
+                        text = when (uiState.syncPhase) {
+                            SyncUiPhase.UPLOADING -> stringResource(R.string.uploading)
+                            SyncUiPhase.SAVED_LOCAL -> stringResource(R.string.saved_locally)
+                            SyncUiPhase.SYNCING -> stringResource(R.string.syncing)
+                            SyncUiPhase.IDLE -> when {
+                                uiState.attendanceStep != ButtonStep.EDITING -> stringResource(R.string.submit)
+                                uiState.attendanceButtonState.hasEvent() -> stringResource(R.string.update)
+                                else -> stringResource(R.string.start)
+                            }
                         },
                         color = SurfaceColor.Primary,
                         style = LocalTextStyle.current.copy(
@@ -155,7 +163,7 @@ internal fun AttendanceUi(
                     )
                 },
                 onClick = {
-                    if (!uiState.isSyncing) {
+                    if (uiState.syncPhase == SyncUiPhase.IDLE) {
                         when (uiState.attendanceStep) {
                             ButtonStep.HOLD_SAVING -> {
                                 onEvent(AttendanceUiEvent.AddStep(ButtonStep.SAVING))
@@ -317,7 +325,7 @@ internal fun AttendanceUi(
                                             key = student.tei.uid(),
                                             modifier = Modifier.padding(horizontal = 16.dp),
                                             state = uiState.attendanceButtonState,
-                                            interactive = !uiState.isSyncing,
+                                            interactive = uiState.syncPhase == SyncUiPhase.IDLE,
                                             onClick = {
                                                 onEvent(
                                                     AttendanceUiEvent.AddAttendance(
@@ -335,7 +343,7 @@ internal fun AttendanceUi(
                                         AttendanceField(
                                             key = student.tei.uid(),
                                             field = uiState.fields.firstOrNull(),
-                                            enabled = !isInactive && uiState.attendanceStep != ButtonStep.EDITING && !uiState.isSyncing,
+                                            enabled = !isInactive && uiState.attendanceStep != ButtonStep.EDITING && uiState.syncPhase == SyncUiPhase.IDLE,
                                             fieldsData = uiState.fieldsData,
                                             onValueChange = { key, fieldUid, value ->
                                                 onEvent(

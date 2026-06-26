@@ -140,10 +140,12 @@ fun AttendanceSummaryDialog(
     themeColor: Color,
     disableActions: Boolean = false,
     showButtons: Boolean = true,
+    dismissOnBack: Boolean = false,
+    onDismissRequest: () -> Unit = {},
     onCancel: () -> Unit = {},
     onDone: () -> Unit = {},
 ) {
-    AlertDialogTemplate {
+    AlertDialogTemplate(dismissOnBack = dismissOnBack, onDismissRequest = onDismissRequest) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = title,
@@ -316,14 +318,16 @@ private fun DialogTemplate(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlertDialogTemplate(
+    dismissOnBack: Boolean = false,
+    onDismissRequest: () -> Unit = {},
     content:
     @Composable
     (ColumnScope.() -> Unit),
 ) {
     AlertDialog(
-        onDismissRequest = {},
+        onDismissRequest = onDismissRequest,
         properties = DialogProperties(
-            dismissOnBackPress = false,
+            dismissOnBackPress = dismissOnBack,
             dismissOnClickOutside = false,
         ),
     ) {

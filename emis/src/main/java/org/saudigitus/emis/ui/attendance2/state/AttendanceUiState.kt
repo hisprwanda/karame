@@ -13,6 +13,16 @@ import org.saudigitus.emis.ui.form.attendance.models.FormFieldData
 import org.saudigitus.emis.ui.form.attendance.models.FormFieldState
 import org.saudigitus.emis.utils.DateHelper
 
+/**
+ * Transient state of the submit/sync step, kept separate from the data so the FAB can show the
+ * truthful action and offline never enters an "uploading" state.
+ *  - IDLE        : nothing in flight; FAB shows Start/Update/Submit.
+ *  - UPLOADING   : online submit; data saved locally and being pushed to the server.
+ *  - SAVED_LOCAL : offline submit; data saved on device only, will upload when online.
+ *  - SYNCING     : manual toolbar (download) sync running.
+ */
+enum class SyncUiPhase { IDLE, UPLOADING, SAVED_LOCAL, SYNCING }
+
 sealed class AttendanceUiState(
     open val toolbarHeaders: ToolbarHeaders,
     open val infoCard: InfoCard,
@@ -49,7 +59,7 @@ sealed class AttendanceUiState(
         val displayBulk: Boolean = false,
         val displaySummary: Boolean = false,
         val execSync: Boolean = false,
-        val isSyncing: Boolean = false,
+        val syncPhase: SyncUiPhase = SyncUiPhase.IDLE,
     ) : AttendanceUiState(toolbarHeaders, infoCard, students) {
     }
 }

@@ -11,7 +11,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.dhis2.commons.network.NetworkUtils
 import org.dhis2.commons.resources.ResourceManager
 import org.hisp.dhis.android.core.maintenance.D2Error
 import org.joda.time.format.ISODateTimeFormat.date
@@ -28,9 +30,11 @@ import org.saudigitus.emis.ui.attendance2.models.AttendanceButtonModel
 import org.saudigitus.emis.ui.attendance2.models.AttendanceButtonState
 import org.saudigitus.emis.ui.attendance2.state.AttendanceUiEvent
 import org.saudigitus.emis.ui.attendance2.state.AttendanceUiState
+import org.saudigitus.emis.ui.attendance2.state.SyncUiPhase
 import org.saudigitus.emis.ui.components.InfoCard
 import org.saudigitus.emis.ui.components.ToolbarHeaders
 import org.saudigitus.emis.ui.form.attendance.models.FormFieldData
+import org.saudigitus.emis.ui.form.attendance.models.FormFieldState
 import org.saudigitus.emis.utils.Constants
 import org.saudigitus.emis.utils.Constants.KEY
 import org.saudigitus.emis.utils.DateHelper
@@ -49,6 +53,7 @@ class AttendanceViewModel @Inject constructor(
     private val attendanceRepository: AttendanceRepository,
     private val formRepository: FormRepository,
     private val resourceManager: ResourceManager,
+    private val networkUtils: NetworkUtils,
 ) : ViewModel() {
 
     private var attendanceConfig: Attendance? = null
@@ -141,8 +146,9 @@ class AttendanceViewModel @Inject constructor(
             }
 
             is AttendanceUiEvent.DismissSummary -> {
-                val s = _uiState.value as? AttendanceUiState.HasAttendance ?: return
-                _uiState.value = s.copy(displaySummary = false)
+                _uiState.update {
+                    (it as? AttendanceUiState.HasAttendance)?.copy(displaySummary = false) ?: it
+                }
             }
 
             is AttendanceUiEvent.ClearAttendance -> {
@@ -206,60 +212,72 @@ class AttendanceViewModel @Inject constructor(
     ) {
         selectedDate = date
         viewModelScope.launch {
-            val currentState = uiState.value as? AttendanceUiState.HasAttendance ?: return@launch
-            val toolbarHeaders = currentState.toolbarHeaders
-            val currentButtonState = currentState.attendanceButtonState
+            val current = _uiState.value as? AttendanceUiState.HasAttendance ?: return@launch
+            val program = current.program
+            val baseButtonState = current.attendanceButtonState
 
-            _uiState.value = currentState.copy(displayReasonField = emptyMap())
+            // Show the loading spinner and clear stale reason fields up front (atomic).
+            _uiState.update { s ->
+                val st = s as? AttendanceUiState.HasAttendance ?: return@update s
+                st.copy(
+                    attendanceButtonState = st.attendanceButtonState.copy(isLoading = true),
+                    displayReasonField = emptyMap(),
+                )
+            }
 
-            val canTakeAttendance = validateCalendar(date, schoolCalendar.value, currentSchoolCalendar.value)
-
-            val attendanceStatus = attendanceRepository.getAttendanceStatus(
-                currentState.program,
-                selectedDate
-            )
-
-            _uiState.value = currentState.copy(
-                attendanceButtonState = currentButtonState.copy(isLoading = true)
-            )
+            val canTakeAttendance =
+                validateCalendar(date, schoolCalendar.value, currentSchoolCalendar.value)
+            val attendanceStatus = attendanceRepository.getAttendanceStatus(program, date)
 
             val updatedButtonState = attendanceRepository.loadAttendanceEvents(
                 teiUids = studentsIds,
-                program = currentState.program,
+                program = program,
                 programStage = attendanceConfig?.programStage.orEmpty(),
                 dataElement = attendanceConfig?.status.orEmpty(),
                 reasonDataElement = attendanceConfig?.absenceReason.orEmpty(),
                 eventDate = date,
-                attendanceButtonState = currentState.attendanceButtonState,
+                attendanceButtonState = baseButtonState,
             )
 
-            val updatedFormData = transform2FormData(updatedButtonState)
+            val updatedFormData = transform2FormData(updatedButtonState, current.fields)
             val updatedSummary = attendanceRepository.attendanceSummary(updatedButtonState)
 
-            _uiState.value = currentState.copy(
-                toolbarHeaders = toolbarHeaders.copy(
-                    subtitle = DateHelper.formatDateWithWeekDay(date)
-                ),
-                canTakeAttendance = canTakeAttendance,
-                selectedDate = date,
-                attendanceButtonState = updatedButtonState,
-                fieldsData = updatedFormData,
-                attendanceStatus = attendanceStatus,
-                attendanceSummary = updatedSummary,
-                displayReasonField = emptyMap(),
-            )
+            // A freshly loaded day carries no pending in-memory marks; clearing this means the
+            // "leave without submitting?" guard only fires when something was actually marked.
+            _hasCachedData.value = false
+
+            // Single atomic write of the loaded data fields only. Transient flags (syncPhase,
+            // displaySummary, attendanceStep, execSync) are preserved from the latest state so a
+            // concurrent submit/sync can never be clobbered by this reload.
+            _uiState.update { s ->
+                val st = s as? AttendanceUiState.HasAttendance ?: return@update s
+                st.copy(
+                    toolbarHeaders = st.toolbarHeaders.copy(
+                        subtitle = DateHelper.formatDateWithWeekDay(date)
+                    ),
+                    canTakeAttendance = canTakeAttendance,
+                    selectedDate = date,
+                    attendanceButtonState = updatedButtonState,
+                    fieldsData = updatedFormData,
+                    attendanceStatus = attendanceStatus,
+                    attendanceSummary = updatedSummary,
+                    displayReasonField = emptyMap(),
+                )
+            }
         }
     }
 
-    private fun transform2FormData(buttonState: AttendanceButtonState): List<FormFieldData> {
-        val currentState = uiState.value as AttendanceUiState.HasAttendance
-        _uiState.value = currentState.copy(fieldsData = emptyList())
-
+    // Pure: derives the absence-reason form rows from a button state. No state mutation, so it is
+    // safe to call from inside an atomic update or alongside a concurrent reload.
+    private fun transform2FormData(
+        buttonState: AttendanceButtonState,
+        fields: List<FormFieldState>,
+    ): List<FormFieldData> {
         return buttonState.attendanceEvents
             .mapNotNull { it.event }
             .filter { it.reasonOfAbsence != null }
             .mapNotNull {
-                val formField = currentState.fields.firstOrNull() ?: return@mapNotNull null
+                val formField = fields.firstOrNull() ?: return@mapNotNull null
                 val option = formField.getOption(it.reasonOfAbsence.orEmpty())
 
                 FormFieldData(
@@ -277,7 +295,7 @@ class AttendanceViewModel @Inject constructor(
         buttonModel: AttendanceButtonModel
     ) {
         viewModelScope.launch {
-            val currentState = uiState.value as AttendanceUiState.HasAttendance
+            val currentState = _uiState.value as? AttendanceUiState.HasAttendance ?: return@launch
             _hasCachedData.value = true
 
             val updatedAttendanceButtonState = attendanceRepository.updateAttendanceEvent(
@@ -301,18 +319,20 @@ class AttendanceViewModel @Inject constructor(
             val updatedSummary =
                 attendanceRepository.attendanceSummary(updatedAttendanceButtonState)
 
-            _uiState.value = currentState.copy(
-                attendanceButtonState = updatedAttendanceButtonState,
-                fieldsData = updatedFormFieldData,
-                displayReasonField = displayReasonField,
-                attendanceSummary = updatedSummary
-            )
+            _uiState.update { s ->
+                (s as? AttendanceUiState.HasAttendance)?.copy(
+                    attendanceButtonState = updatedAttendanceButtonState,
+                    fieldsData = updatedFormFieldData,
+                    displayReasonField = displayReasonField,
+                    attendanceSummary = updatedSummary
+                ) ?: s
+            }
         }
     }
 
     private fun bulkAttendance(buttonModel: AttendanceButtonModel) {
         viewModelScope.launch {
-            val currentState = uiState.value as AttendanceUiState.HasAttendance
+            val currentState = _uiState.value as? AttendanceUiState.HasAttendance ?: return@launch
             _hasCachedData.value = true
 
             // Apply every student's mark on a single accumulated state and write once.
@@ -340,18 +360,26 @@ class AttendanceViewModel @Inject constructor(
                 )
             }
 
-            _uiState.value = currentState.copy(
-                attendanceButtonState = buttonState,
-                fieldsData = fieldsData,
-                displayReasonField = displayReasonField,
-                attendanceSummary = attendanceRepository.attendanceSummary(buttonState),
-            )
+            val finalButtonState = buttonState
+            val finalFieldsData = fieldsData
+            val finalDisplayReasonField = displayReasonField
+            val finalSummary = attendanceRepository.attendanceSummary(finalButtonState)
+
+            _uiState.update { s ->
+                (s as? AttendanceUiState.HasAttendance)?.copy(
+                    attendanceButtonState = finalButtonState,
+                    fieldsData = finalFieldsData,
+                    displayReasonField = finalDisplayReasonField,
+                    attendanceSummary = finalSummary,
+                ) ?: s
+            }
         }
     }
 
     private fun launchBulk(launch: Boolean = true) {
-        val currentState = uiState.value as AttendanceUiState.HasAttendance
-        _uiState.value = currentState.copy(displayBulk = launch)
+        _uiState.update {
+            (it as? AttendanceUiState.HasAttendance)?.copy(displayBulk = launch) ?: it
+        }
     }
 
     private fun updateAttendanceReason(
@@ -359,14 +387,12 @@ class AttendanceViewModel @Inject constructor(
         dataElement: String,
         value: String
     ) {
-        val currentState = uiState.value as AttendanceUiState.HasAttendance
+        val currentState = _uiState.value as? AttendanceUiState.HasAttendance ?: return
         val currentButtonState = currentState.attendanceButtonState
         val attendanceEvents = currentButtonState.attendanceEvents.toMutableList()
+
+        val event = attendanceEvents.find { it.event?.tei == tei } ?: return
         _hasCachedData.value = true
-
-        val event = attendanceEvents.find { it.event?.tei == tei }
-
-        if (event == null) return
 
         val updatedEvent = event.event?.copy(
             reasonDataElement = dataElement,
@@ -383,14 +409,16 @@ class AttendanceViewModel @Inject constructor(
         }
 
         val updatedButtonState = currentButtonState.copy(attendanceEvents = attendanceEvents)
-        val updatedFieldsData = transform2FormData(updatedButtonState)
+        val updatedFieldsData = transform2FormData(updatedButtonState, currentState.fields)
         val updatedSummary = attendanceRepository.attendanceSummary(updatedButtonState)
 
-        _uiState.value = currentState.copy(
-            attendanceButtonState = updatedButtonState,
-            fieldsData = updatedFieldsData,
-            attendanceSummary = updatedSummary
-        )
+        _uiState.update { s ->
+            (s as? AttendanceUiState.HasAttendance)?.copy(
+                attendanceButtonState = updatedButtonState,
+                fieldsData = updatedFieldsData,
+                attendanceSummary = updatedSummary
+            ) ?: s
+        }
     }
 
     private fun displayAbsenceReason(
@@ -412,16 +440,18 @@ class AttendanceViewModel @Inject constructor(
     }
 
     private fun clearAllEvents() {
-        val currentState = uiState.value as AttendanceUiState.HasAttendance
+        val currentState = _uiState.value as? AttendanceUiState.HasAttendance ?: return
         val updatedButtonState = attendanceRepository.clearAll(currentState.attendanceButtonState)
         _hasCachedData.value = true
 
-        _uiState.value = currentState.copy(
-            attendanceButtonState = updatedButtonState,
-            fieldsData = emptyList(),
-            displayReasonField = emptyMap(),
-            attendanceSummary = emptyList()
-        )
+        _uiState.update { s ->
+            (s as? AttendanceUiState.HasAttendance)?.copy(
+                attendanceButtonState = updatedButtonState,
+                fieldsData = emptyList(),
+                displayReasonField = emptyMap(),
+                attendanceSummary = emptyList()
+            ) ?: s
+        }
     }
 
     private fun removeFromFormFieldData(
@@ -433,7 +463,7 @@ class AttendanceViewModel @Inject constructor(
 
     private fun setButtonStep(step: ButtonStep) {
         viewModelScope.launch {
-            val currentState = uiState.value as? AttendanceUiState.HasAttendance ?: return@launch
+            val currentState = _uiState.value as? AttendanceUiState.HasAttendance ?: return@launch
             val currentButtonState = currentState.attendanceButtonState
 
             val hasInvalidData = hasInvalidData(currentButtonState)
@@ -458,17 +488,28 @@ class AttendanceViewModel @Inject constructor(
                 return@launch
             }
 
-            _uiState.value = currentState.copy(
-                attendanceStep = step,
-                attendanceButtonState = currentButtonState.copy(
-                    isEditing = step != ButtonStep.EDITING
-                ),
-                displaySummary = step == ButtonStep.SAVING,
-                isAttendanceCompleted = isCompleted,
-                // Lock editing the instant Submit is accepted, before the (slow for large
-                // classes) save runs. Cleared on sync completion / offline / save failure.
-                isSyncing = step == ButtonStep.SAVING,
-            )
+            // Decide the lock/label phase by connectivity at submit time, so offline shows
+            // "Saved locally" (not "Uploading") and never enters a never-ending sync state.
+            val phase = if (step == ButtonStep.SAVING) {
+                if (networkUtils.isOnline()) SyncUiPhase.UPLOADING else SyncUiPhase.SAVED_LOCAL
+            } else {
+                currentState.syncPhase
+            }
+
+            _uiState.update { s ->
+                val st = s as? AttendanceUiState.HasAttendance ?: return@update s
+                st.copy(
+                    attendanceStep = step,
+                    attendanceButtonState = st.attendanceButtonState.copy(
+                        isEditing = step != ButtonStep.EDITING
+                    ),
+                    displaySummary = step == ButtonStep.SAVING,
+                    isAttendanceCompleted = isCompleted,
+                    // Lock editing the instant Submit is accepted, before the (slow for large
+                    // classes) save runs. Cleared on sync completion / offline / save failure.
+                    syncPhase = phase,
+                )
+            }
 
             if (step == ButtonStep.SAVING) {
                 saveAttendanceEvents()
@@ -478,8 +519,7 @@ class AttendanceViewModel @Inject constructor(
 
     private fun saveAttendanceEvents() {
         viewModelScope.launch {
-            val current = uiState.value as AttendanceUiState.HasAttendance
-            val currentButtonState = current.attendanceButtonState
+            val current = _uiState.value as? AttendanceUiState.HasAttendance ?: return@launch
 
             runCatching {
                 attendanceRepository.saveAttendance(
@@ -488,12 +528,21 @@ class AttendanceViewModel @Inject constructor(
                     attendanceEvents = current.attendanceButtonState.attendanceEvents
                 )
             }.onSuccess {
-                _uiState.value = current.copy(
-                    attendanceStep = ButtonStep.EDITING,
-                    attendanceButtonState = currentButtonState.copy(isEditing = false),
-                    displaySummary = true,
-                    execSync = true
-                )
+                // Data is now safely on the device. Clear the unsaved guard immediately so that
+                // pressing back / changing date during the background upload just leaves, instead
+                // of nagging to discard already-saved work.
+                _hasCachedData.value = false
+                _uiState.update { s ->
+                    val st = s as? AttendanceUiState.HasAttendance ?: return@update s
+                    st.copy(
+                        attendanceStep = ButtonStep.EDITING,
+                        attendanceButtonState = st.attendanceButtonState.copy(isEditing = false),
+                        displaySummary = true,
+                        execSync = true,
+                        // keep syncPhase as set by setButtonStep (UPLOADING / SAVED_LOCAL);
+                        // it is resolved by the sync callbacks.
+                    )
+                }
                 loadAttendanceEventsByDate(selectedDate.ifEmpty { current.selectedDate })
                 _execSync.emit(true)
                 _snackbarEvent.emit(
@@ -515,7 +564,12 @@ class AttendanceViewModel @Inject constructor(
                         .getString(R.string.error_unexpected)
                 }
 
-                _uiState.value = current.copy(displaySummary = false, isSyncing = false)
+                _uiState.update { s ->
+                    (s as? AttendanceUiState.HasAttendance)?.copy(
+                        displaySummary = false,
+                        syncPhase = SyncUiPhase.IDLE,
+                    ) ?: s
+                }
                 _snackbarEvent.emit(SnackbarMessage(friendlyMessage, isError = true))
             }
         }
@@ -556,26 +610,56 @@ class AttendanceViewModel @Inject constructor(
         }
     }
 
-    fun setSyncing(syncing: Boolean) {
-        val currentState = _uiState.value as? AttendanceUiState.HasAttendance ?: return
-        _uiState.value = currentState.copy(isSyncing = syncing)
+    /** Manual toolbar (download) sync started — lock editing and show "Synchronizing…". */
+    fun startManualSync() {
+        _uiState.update {
+            (it as? AttendanceUiState.HasAttendance)?.copy(syncPhase = SyncUiPhase.SYNCING) ?: it
+        }
+    }
+
+    /** A sync (upload or manual) finished — return to IDLE and reload the day from the DB. */
+    fun onSyncFinished() {
+        refresh()
+    }
+
+    /**
+     * Offline submit: data is saved on the device only. Keep the "Saved locally" label briefly so
+     * the teacher sees the confirmation, then settle the FAB back to its normal action.
+     */
+    fun onSavedOffline() {
+        viewModelScope.launch {
+            delay(3000L)
+            _uiState.update { s ->
+                val st = s as? AttendanceUiState.HasAttendance ?: return@update s
+                if (st.syncPhase == SyncUiPhase.SAVED_LOCAL) {
+                    st.copy(syncPhase = SyncUiPhase.IDLE)
+                } else {
+                    st
+                }
+            }
+        }
     }
 
     fun refresh() {
         viewModelScope.launch {
-            val currentState = uiState.value as AttendanceUiState.HasAttendance
-            val currentButtonState = currentState.attendanceButtonState
             _hasCachedData.value = false
 
-            _uiState.value = currentState.copy(
-                attendanceStep = ButtonStep.EDITING,
-                attendanceButtonState = currentButtonState.copy(isEditing = false),
-                execSync = false,
-                displayReasonField = emptyMap(),
-                isAttendanceCompleted = false,
-            )
+            _uiState.update { s ->
+                val st = s as? AttendanceUiState.HasAttendance ?: return@update s
+                st.copy(
+                    attendanceStep = ButtonStep.EDITING,
+                    attendanceButtonState = st.attendanceButtonState.copy(isEditing = false),
+                    execSync = false,
+                    displayReasonField = emptyMap(),
+                    isAttendanceCompleted = false,
+                    syncPhase = SyncUiPhase.IDLE,
+                )
+            }
             delay(10L)
-            loadAttendanceEventsByDate(selectedDate.ifEmpty { currentState.selectedDate })
+            val date = selectedDate.ifEmpty {
+                (_uiState.value as? AttendanceUiState.HasAttendance)?.selectedDate.orEmpty()
+            }
+            loadAttendanceEventsByDate(date)
         }
     }
 }

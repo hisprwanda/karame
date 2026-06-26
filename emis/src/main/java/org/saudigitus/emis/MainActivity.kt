@@ -315,6 +315,17 @@ class MainActivity : FragmentActivity() {
                 syncContext = SyncContext.GlobalTrackerProgram(viewModel.program.value),
             ).showSilent(
                 onComplete = {
+                    // The silent upload has finished (it reports completion for success *or*
+                    // failure). If we've since gone offline, the connection dropped mid-sync and
+                    // the upload didn't go through — the data is still saved on the device, so tell
+                    // the user instead of silently leaving it as "Not submitted".
+                    if (!networkUtils.isOnline()) {
+                        Snackbar.make(
+                            this.window.decorView.rootView,
+                            getString(R.string.upload_failed_saved_locally),
+                            Snackbar.LENGTH_LONG,
+                        ).show()
+                    }
                     viewModel.refreshData()
                     refresh?.invoke()
                 },
